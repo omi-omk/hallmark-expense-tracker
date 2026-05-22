@@ -3,6 +3,9 @@ import { NextResponse } from 'next/server'
 
 export async function GET() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
   const { data } = await supabase
     .from('categories')
     .select('*')
@@ -36,6 +39,7 @@ export async function DELETE(request: Request) {
   if (profile?.role !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await request.json()
+  if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
 
   const { data: cat } = await supabase.from('categories').select('is_system').eq('id', id).single()
   if (cat?.is_system) return NextResponse.json({ error: 'Cannot delete system category' }, { status: 400 })

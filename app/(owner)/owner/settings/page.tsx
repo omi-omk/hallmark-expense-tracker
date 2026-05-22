@@ -14,16 +14,23 @@ export default function SettingsPage() {
   const [alertEmail, setAlertEmail] = useState('')
   const [emailLoading, setEmailLoading] = useState(false)
   const [addLoading, setAddLoading] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function fetchData() {
     const [catRes, settingsRes] = await Promise.all([
       fetch('/api/categories'),
       fetch('/api/settings'),
     ])
-    if (catRes.ok) setCategories(await catRes.json())
+    if (catRes.ok) {
+      setCategories(await catRes.json())
+    } else {
+      toast.error('Failed to load categories')
+    }
     if (settingsRes.ok) {
       const s = await settingsRes.json()
       setAlertEmail(s.owner_alert_email ?? '')
+    } else {
+      toast.error('Failed to load settings')
     }
   }
 
@@ -50,6 +57,7 @@ export default function SettingsPage() {
   }
 
   async function deleteCategory(id: string) {
+    setDeletingId(id)
     const res = await fetch('/api/categories', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -62,6 +70,7 @@ export default function SettingsPage() {
       const err = await res.json()
       toast.error(err.error ?? 'Cannot delete category')
     }
+    setDeletingId(null)
   }
 
   async function saveAlertEmail(e: React.FormEvent) {
@@ -130,6 +139,7 @@ export default function SettingsPage() {
                     variant="ghost"
                     size="sm"
                     onClick={() => deleteCategory(cat.id)}
+                    disabled={deletingId === cat.id}
                     className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
                   >
                     <Trash2 className="h-4 w-4" />
