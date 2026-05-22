@@ -64,8 +64,8 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
               .sort((a, b) => (a.sortKey < b.sortKey ? 1 : -1))
               .map(item => {
                 const ts = new Date(item.entry.created_at)
-                const dateStr = ts.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-                const timeStr = ts.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                const dateStr = ts.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })
+                const timeStr = ts.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })
                 return item.type === 'credit' ? (
                   <div key={`t-${item.entry.id}`} className="flex justify-between text-sm py-2 border-b last:border-0">
                     <div>
