@@ -52,43 +52,53 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
       <ResetCredentialsForm workerId={worker.id} currentName={worker.name} />
 
       <Card>
-        <CardHeader><CardTitle>Fund History</CardTitle></CardHeader>
+        <CardHeader><CardTitle>Transactions</CardTitle></CardHeader>
         <CardContent className="space-y-2">
-          {transfers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No transfers yet.</p>
-          ) : transfers.map(t => (
-            <div key={t.id} className="flex justify-between text-sm py-1 border-b last:border-0">
-              <div>
-                <p className="font-medium text-green-700">+₹{t.amount.toLocaleString('en-IN')}</p>
-                {t.note && <p className="text-muted-foreground">{t.note}</p>}
-              </div>
-              <p className="text-muted-foreground">{new Date(t.created_at).toLocaleDateString('en-IN')}</p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader><CardTitle>Expenses</CardTitle></CardHeader>
-        <CardContent className="space-y-2">
-          {expenses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No expenses yet.</p>
-          ) : expenses.map(e => (
-            <div key={e.id} className="py-2 border-b last:border-0">
-              <div className="flex justify-between text-sm">
-                <div>
-                  <p className="font-medium">{e.categories.name}</p>
-                  <p className="text-muted-foreground">{e.date}{e.comment ? ` — ${e.comment}` : ''}</p>
+          {transfers.length === 0 && expenses.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No transactions yet.</p>
+          ) : (
+            [
+              ...transfers.map(t => ({ type: 'credit' as const, sortKey: t.created_at, entry: t })),
+              ...expenses.map(e => ({ type: 'debit' as const, sortKey: e.date, entry: e })),
+            ]
+              .sort((a, b) => (a.sortKey < b.sortKey ? 1 : -1))
+              .map(item => item.type === 'credit' ? (
+                <div key={`t-${item.entry.id}`} className="flex justify-between text-sm py-2 border-b last:border-0">
+                  <div>
+                    <p className="font-medium text-green-700">Funds Added</p>
+                    {(item.entry as FundTransfer).note && (
+                      <p className="text-muted-foreground">{(item.entry as FundTransfer).note}</p>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="font-medium text-green-700">+₹{item.entry.amount.toLocaleString('en-IN')}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(item.entry.created_at).toLocaleDateString('en-IN')}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-red-600 shrink-0">-₹{e.amount.toLocaleString('en-IN')}</p>
-              </div>
-              {e.image_url && (
-                <a href={e.image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
-                  View receipt
-                </a>
-              )}
-            </div>
-          ))}
+              ) : (
+                <div key={`e-${item.entry.id}`} className="py-2 border-b last:border-0">
+                  <div className="flex justify-between text-sm">
+                    <div>
+                      <p className="font-medium">{(item.entry as ExpenseWithCategory).categories.name}</p>
+                      <p className="text-muted-foreground">
+                        {(item.entry as ExpenseWithCategory).date}
+                        {(item.entry as ExpenseWithCategory).comment ? ` — ${(item.entry as ExpenseWithCategory).comment}` : ''}
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="font-medium text-red-600">-₹{item.entry.amount.toLocaleString('en-IN')}</p>
+                    </div>
+                  </div>
+                  {(item.entry as ExpenseWithCategory).image_url && (
+                    <a href={(item.entry as ExpenseWithCategory).image_url!} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                      View receipt
+                    </a>
+                  )}
+                </div>
+              ))
+          )}
         </CardContent>
       </Card>
     </div>
