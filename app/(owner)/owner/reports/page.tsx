@@ -28,18 +28,29 @@ export default function ReportsPage() {
 
   async function runReport() {
     setLoading(true)
-    const params = new URLSearchParams(
-      Object.entries(filters).filter(([, v]) => v) as [string, string][]
-    )
-    const res = await fetch(`/api/reports?${params}`)
-    if (res.ok) {
-      const data = await res.json()
-      setExpenses(data)
-      setHasRun(true)
-    } else {
+    try {
+      const params = new URLSearchParams(
+        Object.entries(filters).filter(([, v]) => v) as [string, string][]
+      )
+      const res = await fetch(`/api/reports?${params}`)
+      if (res.ok) {
+        const data = await res.json()
+        setExpenses(data)
+        setHasRun(true)
+      } else {
+        toast.error('Failed to load report')
+      }
+    } catch {
       toast.error('Failed to load report')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
+  }
+
+  function updateFilter(key: string, value: string) {
+    setFilters(f => ({ ...f, [key]: value }))
+    setExpenses([])
+    setHasRun(false)
   }
 
   function exportUrl(format: 'csv' | 'pdf') {
@@ -60,7 +71,7 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label>Worker</Label>
-              <Select onValueChange={(v: string | null) => setFilters(f => ({ ...f, worker_id: v && v !== 'all' ? v : '' }))}>
+              <Select onValueChange={(v: string | null) => updateFilter('worker_id', v && v !== 'all' ? v : '')}>
                 <SelectTrigger><SelectValue placeholder="All workers" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All workers</SelectItem>
@@ -70,7 +81,7 @@ export default function ReportsPage() {
             </div>
             <div className="space-y-1">
               <Label>Category</Label>
-              <Select onValueChange={(v: string | null) => setFilters(f => ({ ...f, category_id: v && v !== 'all' ? v : '' }))}>
+              <Select onValueChange={(v: string | null) => updateFilter('category_id', v && v !== 'all' ? v : '')}>
                 <SelectTrigger><SelectValue placeholder="All categories" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All categories</SelectItem>
@@ -80,11 +91,11 @@ export default function ReportsPage() {
             </div>
             <div className="space-y-1">
               <Label>From</Label>
-              <Input type="date" onChange={e => setFilters(f => ({ ...f, from: e.target.value }))} />
+              <Input type="date" onChange={e => updateFilter('from', e.target.value)} />
             </div>
             <div className="space-y-1">
               <Label>To</Label>
-              <Input type="date" onChange={e => setFilters(f => ({ ...f, to: e.target.value }))} />
+              <Input type="date" onChange={e => updateFilter('to', e.target.value)} />
             </div>
           </div>
           <Button onClick={runReport} disabled={loading} className="w-full">

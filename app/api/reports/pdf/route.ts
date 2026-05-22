@@ -6,6 +6,7 @@ import type { ExpenseWithCategory } from '@/types'
 export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return new NextResponse('Unauthorized', { status: 401 })
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id ?? '').single()
   if (profile?.role !== 'owner') return new NextResponse('Forbidden', { status: 403 })
 
@@ -25,7 +26,8 @@ export async function GET(request: Request) {
   if (from) query = query.gte('date', from)
   if (to) query = query.lte('date', to)
 
-  const { data } = await query
+  const { data, error } = await query
+  if (error) return new NextResponse('Failed to fetch expenses', { status: 500 })
   const title = [
     from && `From: ${from}`,
     to && `To: ${to}`,
