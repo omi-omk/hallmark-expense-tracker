@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 
 export default async function Home() {
@@ -7,7 +7,8 @@ export default async function Home() {
 
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
+  const admin = createAdminClient()
+  const { data: profile } = await admin
     .from('profiles')
     .select('role')
     .eq('id', user.id)
