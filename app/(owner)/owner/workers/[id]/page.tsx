@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { calculateBalance } from '@/lib/balance'
 import { FundForm } from '@/components/fund-form'
@@ -13,10 +13,11 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const admin = createAdminClient()
   const [workerRes, transfersRes, expensesRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', id).single(),
-    supabase.from('fund_transfers').select('*').eq('worker_id', id).order('created_at', { ascending: false }),
-    supabase.from('expenses').select('*, categories(name)').eq('worker_id', id).order('date', { ascending: false }),
+    admin.from('profiles').select('*').eq('id', id).single(),
+    admin.from('fund_transfers').select('*').eq('worker_id', id).order('created_at', { ascending: false }),
+    admin.from('expenses').select('*, categories(name)').eq('worker_id', id).order('date', { ascending: false }),
   ])
 
   if (!workerRes.data) notFound()

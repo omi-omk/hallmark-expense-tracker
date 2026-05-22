@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { calculateBalance } from '@/lib/balance'
 import { BalanceCard } from '@/components/balance-card'
@@ -14,10 +14,11 @@ export default async function WorkerDashboard() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const admin = createAdminClient()
   const [profileRes, transfersRes, allExpensesRes] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user.id).single(),
-    supabase.from('fund_transfers').select('amount').eq('worker_id', user.id),
-    supabase
+    admin.from('profiles').select('*').eq('id', user.id).single(),
+    admin.from('fund_transfers').select('amount').eq('worker_id', user.id),
+    admin
       .from('expenses')
       .select('*, categories(name)')
       .eq('worker_id', user.id)

@@ -1,15 +1,16 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { calculateBalance } from '@/lib/balance'
 import { WorkerCard } from '@/components/worker-card'
-import type { WorkerWithBalance } from '@/types'
+import type { Profile, WorkerWithBalance } from '@/types'
 
 export default async function OwnerDashboard() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: workers } = await supabase
+  const admin = createAdminClient()
+  const { data: workers } = await admin
     .from('profiles')
     .select('*')
     .eq('role', 'worker')
@@ -17,10 +18,10 @@ export default async function OwnerDashboard() {
     .order('name')
 
   const workersWithBalance: WorkerWithBalance[] = await Promise.all(
-    (workers ?? []).map(async worker => {
+    (workers as Profile[] ?? []).map(async (worker: Profile) => {
       const [transfersRes, expensesRes] = await Promise.all([
-        supabase.from('fund_transfers').select('amount').eq('worker_id', worker.id),
-        supabase.from('expenses').select('amount').eq('worker_id', worker.id),
+        admin.from('fund_transfers').select('amount').eq('worker_id', worker.id),
+        admin.from('expenses').select('amount').eq('worker_id', worker.id),
       ])
       const balance = calculateBalance(transfersRes.data ?? [], expensesRes.data ?? [])
       return { ...worker, balance }

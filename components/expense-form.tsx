@@ -88,7 +88,7 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       <div className="space-y-2">
         <Label>Amount (₹)</Label>
-        <Input type="number" min={1} placeholder="500" {...register('amount')} />
+        <Input type="number" min={1} placeholder="500" {...register('amount', { valueAsNumber: true })} />
         {errors.amount && <p className="text-xs text-red-500">{errors.amount.message}</p>}
       </div>
 

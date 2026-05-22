@@ -1,4 +1,4 @@
-import { createClient, isOwner } from '@/lib/supabase/server'
+import { createClient, createAdminClient, isOwner } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET(request: Request) {
@@ -13,7 +13,8 @@ export async function GET(request: Request) {
   const from = searchParams.get('from')
   const to = searchParams.get('to')
 
-  let query = supabase
+  const admin = createAdminClient()
+  let query = admin
     .from('expenses')
     .select('*, categories(name), profiles(name)')
     .order('date', { ascending: false })

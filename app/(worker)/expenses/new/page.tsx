@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ExpenseForm } from '@/components/expense-form'
 import type { Category } from '@/types'
@@ -8,7 +8,8 @@ export default async function NewExpensePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const { data: categories } = await supabase
+  const admin = createAdminClient()
+  const { data: categories } = await admin
     .from('categories')
     .select('*')
     .eq('is_global', true)

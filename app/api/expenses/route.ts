@@ -6,7 +6,7 @@ import { z } from 'zod'
 
 const schema = z.object({
   category_id: z.string().uuid(),
-  amount: z.number().int().positive(),
+  amount: z.coerce.number().int().positive(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   comment: z.string().optional(),
   image_url: z.string().url().optional().nullable(),

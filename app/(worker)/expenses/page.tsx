@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ExpenseList } from '@/components/expense-list'
 import type { Category, ExpenseWithCategory } from '@/types'
@@ -8,13 +8,14 @@ export default async function ExpensesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const admin = createAdminClient()
   const [expensesRes, categoriesRes] = await Promise.all([
-    supabase
+    admin
       .from('expenses')
       .select('*, categories(name)')
       .eq('worker_id', user.id)
       .order('date', { ascending: false }),
-    supabase.from('categories').select('*').eq('is_global', true).order('name'),
+    admin.from('categories').select('*').eq('is_global', true).order('name'),
   ])
 
   const expenses = (expensesRes.data ?? []) as ExpenseWithCategory[]
