@@ -63,7 +63,7 @@ export async function POST(request: Request) {
   try {
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
-      from: 'noreply@expensetracker.app',
+      from: 'onboarding@resend.dev',
       to: email,
       subject: 'Your Expense Tracker account is ready',
       html: `

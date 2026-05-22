@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
   }
 
-  const { data: expense, error } = await supabase.from('expenses').insert({
+  const { data: expense, error } = await admin.from('expenses').insert({
     worker_id: user.id,
     ...parsed.data,
   }).select().single()

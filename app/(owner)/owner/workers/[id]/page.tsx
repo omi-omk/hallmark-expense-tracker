@@ -49,7 +49,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
         </CardContent>
       </Card>
 
-      <ResetCredentialsForm workerId={worker.id} />
+      <ResetCredentialsForm workerId={worker.id} currentName={worker.name} />
 
       <Card>
         <CardHeader><CardTitle>Fund History</CardTitle></CardHeader>

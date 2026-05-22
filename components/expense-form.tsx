@@ -8,7 +8,7 @@ import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import type { Category } from '@/types'
@@ -100,16 +100,18 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
 
       <div className="space-y-2">
         <Label>Category</Label>
-        <Select onValueChange={(val: string | null) => setValue('category_id', val ?? '', { shouldValidate: true })}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select a category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map(cat => (
-              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+        <select
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+          defaultValue=""
+          onChange={e => setValue('category_id', e.target.value, { shouldValidate: true })}
+        >
+          <option value="" disabled>Select a category</option>
+          {categories
+            .sort((a, b) => a.name === 'Other' ? 1 : b.name === 'Other' ? -1 : a.name.localeCompare(b.name))
+            .map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
             ))}
-          </SelectContent>
-        </Select>
+        </select>
         {errors.category_id && <p className="text-xs text-red-500">{errors.category_id.message}</p>}
       </div>
 

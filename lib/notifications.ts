@@ -12,7 +12,7 @@ export async function checkAndNotifyLowBalance(
   if (!isLowBalance(balance, threshold)) return
 
   await resend.emails.send({
-    from: 'alerts@expensetracker.app',
+    from: 'onboarding@resend.dev',
     to: ownerAlertEmail,
     subject: `Low Balance Alert: ${workerName}`,
     html: `
