@@ -18,6 +18,9 @@ export async function POST(request: Request) {
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
+  const { data: targetWorker } = await supabase.from('profiles').select('role').eq('id', parsed.data.worker_id).single()
+  if (!targetWorker || targetWorker.role !== 'worker') return NextResponse.json({ error: 'Invalid worker' }, { status: 400 })
+
   const { error } = await supabase.from('fund_transfers').insert(parsed.data)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

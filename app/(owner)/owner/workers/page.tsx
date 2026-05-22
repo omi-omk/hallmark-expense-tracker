@@ -13,14 +13,21 @@ import type { Profile } from '@/types'
 
 export default function WorkersPage() {
   const [workers, setWorkers] = useState<Profile[]>([])
+  const [fetching, setFetching] = useState(true)
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '', low_balance_threshold: '500' })
   const [loading, setLoading] = useState(false)
 
   async function fetchWorkers() {
+    setFetching(true)
     const res = await fetch('/api/workers')
-    const data = await res.json()
-    setWorkers(data)
+    if (res.ok) {
+      const data = await res.json()
+      setWorkers(data)
+    } else {
+      toast.error('Failed to load workers')
+    }
+    setFetching(false)
   }
 
   useEffect(() => { fetchWorkers() }, [])
@@ -80,22 +87,27 @@ export default function WorkersPage() {
       </div>
 
       <div className="space-y-3">
-        {workers.map(worker => (
-          <Link key={worker.id} href={`/owner/workers/${worker.id}`}>
-            <Card className="cursor-pointer hover:bg-gray-50">
-              <CardContent className="py-4 flex justify-between items-center">
-                <div>
-                  <p className="font-medium">{worker.name}</p>
-                  <p className="text-sm text-muted-foreground">{worker.email}</p>
-                </div>
-                <span className={`text-xs px-2 py-1 rounded-full ${worker.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                  {worker.is_active ? 'Active' : 'Inactive'}
-                </span>
-              </CardContent>
-            </Card>
-          </Link>
-        ))}
-        {workers.length === 0 && <p className="text-muted-foreground text-sm">No workers yet.</p>}
+        {fetching ? (
+          <p className="text-muted-foreground text-sm">Loading...</p>
+        ) : workers.length === 0 ? (
+          <p className="text-muted-foreground text-sm">No workers yet.</p>
+        ) : (
+          workers.map(worker => (
+            <Link key={worker.id} href={`/owner/workers/${worker.id}`}>
+              <Card className="cursor-pointer hover:bg-gray-50">
+                <CardContent className="py-4 flex justify-between items-center">
+                  <div>
+                    <p className="font-medium">{worker.name}</p>
+                    <p className="text-sm text-muted-foreground">{worker.email}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full ${worker.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    {worker.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </CardContent>
+              </Card>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   )

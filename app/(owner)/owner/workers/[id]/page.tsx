@@ -20,6 +20,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
   ])
 
   if (!workerRes.data) notFound()
+  if (workerRes.data.role !== 'worker') notFound()
 
   const worker = workerRes.data
   const transfers = (transfersRes.data ?? []) as FundTransfer[]

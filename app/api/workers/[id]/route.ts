@@ -19,6 +19,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id ?? '').single()
   if (profile?.role !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
+  const { data: target } = await admin.from('profiles').select('role').eq('id', id).single()
+  if (!target || target.role !== 'worker') return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   const body = await request.json()
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })

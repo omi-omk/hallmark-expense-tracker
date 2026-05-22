@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { Resend } from 'resend'
 
 const createWorkerSchema = z.object({
   name: z.string().min(1),
@@ -52,11 +53,13 @@ export async function POST(request: Request) {
     role: 'worker',
     low_balance_threshold,
   })
-  if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
+  if (profileError) {
+    await admin.auth.admin.deleteUser(authUser.user.id).catch(() => {})
+    return NextResponse.json({ error: profileError.message }, { status: 500 })
+  }
 
   // Send welcome email with credentials
   try {
-    const { Resend } = require('resend')
     const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from: 'noreply@expensetracker.app',
