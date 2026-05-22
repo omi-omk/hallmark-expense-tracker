@@ -24,29 +24,14 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
 
+  // Unauthenticated users can only access /login
   if (!user && path !== '/login') {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // Authenticated users visiting /login go to role-resolver
   if (user && path === '/login') {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    const redirect = profile?.role === 'owner' ? '/owner/dashboard' : '/dashboard'
-    return NextResponse.redirect(new URL(redirect, request.url))
-  }
-
-  if (user && path.startsWith('/owner')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-    if (profile?.role !== 'owner') {
-      return NextResponse.redirect(new URL('/dashboard', request.url))
-    }
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return supabaseResponse
