@@ -17,7 +17,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
   const [workerRes, transfersRes, expensesRes] = await Promise.all([
     admin.from('profiles').select('*').eq('id', id).single(),
     admin.from('fund_transfers').select('*').eq('worker_id', id).order('created_at', { ascending: false }),
-    admin.from('expenses').select('*, categories(name)').eq('worker_id', id).order('date', { ascending: false }),
+    admin.from('expenses').select('*, categories(name)').eq('worker_id', id).order('created_at', { ascending: false }),
   ])
 
   if (!workerRes.data) notFound()
@@ -59,45 +59,48 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
           ) : (
             [
               ...transfers.map(t => ({ type: 'credit' as const, sortKey: t.created_at, entry: t })),
-              ...expenses.map(e => ({ type: 'debit' as const, sortKey: e.date, entry: e })),
+              ...expenses.map(e => ({ type: 'debit' as const, sortKey: e.created_at, entry: e })),
             ]
               .sort((a, b) => (a.sortKey < b.sortKey ? 1 : -1))
-              .map(item => item.type === 'credit' ? (
-                <div key={`t-${item.entry.id}`} className="flex justify-between text-sm py-2 border-b last:border-0">
-                  <div>
-                    <p className="font-medium text-green-700">Funds Added</p>
-                    {(item.entry as FundTransfer).note && (
-                      <p className="text-muted-foreground">{(item.entry as FundTransfer).note}</p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-medium text-green-700">+₹{item.entry.amount.toLocaleString('en-IN')}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(item.entry.created_at).toLocaleDateString('en-IN')}
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div key={`e-${item.entry.id}`} className="py-2 border-b last:border-0">
-                  <div className="flex justify-between text-sm">
+              .map(item => {
+                const ts = new Date(item.entry.created_at)
+                const dateStr = ts.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
+                const timeStr = ts.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true })
+                return item.type === 'credit' ? (
+                  <div key={`t-${item.entry.id}`} className="flex justify-between text-sm py-2 border-b last:border-0">
                     <div>
-                      <p className="font-medium">{(item.entry as ExpenseWithCategory).categories.name}</p>
-                      <p className="text-muted-foreground">
-                        {(item.entry as ExpenseWithCategory).date}
-                        {(item.entry as ExpenseWithCategory).comment ? ` — ${(item.entry as ExpenseWithCategory).comment}` : ''}
-                      </p>
+                      <p className="font-medium text-green-700">Funds Added</p>
+                      {(item.entry as FundTransfer).note && (
+                        <p className="text-muted-foreground">{(item.entry as FundTransfer).note}</p>
+                      )}
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="font-medium text-red-600">-₹{item.entry.amount.toLocaleString('en-IN')}</p>
+                      <p className="font-medium text-green-700">+₹{item.entry.amount.toLocaleString('en-IN')}</p>
+                      <p className="text-xs text-muted-foreground">{dateStr}, {timeStr}</p>
                     </div>
                   </div>
-                  {(item.entry as ExpenseWithCategory).image_url && (
-                    <a href={(item.entry as ExpenseWithCategory).image_url!} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
-                      View receipt
-                    </a>
-                  )}
-                </div>
-              ))
+                ) : (
+                  <div key={`e-${item.entry.id}`} className="py-2 border-b last:border-0">
+                    <div className="flex justify-between text-sm">
+                      <div>
+                        <p className="font-medium">{(item.entry as ExpenseWithCategory).categories.name}</p>
+                        {(item.entry as ExpenseWithCategory).comment && (
+                          <p className="text-muted-foreground">{(item.entry as ExpenseWithCategory).comment}</p>
+                        )}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-medium text-red-600">-₹{item.entry.amount.toLocaleString('en-IN')}</p>
+                        <p className="text-xs text-muted-foreground">{dateStr}, {timeStr}</p>
+                      </div>
+                    </div>
+                    {(item.entry as ExpenseWithCategory).image_url && (
+                      <a href={(item.entry as ExpenseWithCategory).image_url!} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                        View receipt
+                      </a>
+                    )}
+                  </div>
+                )
+              })
           )}
         </CardContent>
       </Card>
