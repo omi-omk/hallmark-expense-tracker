@@ -2,7 +2,7 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import type { ExpenseWithCategory } from '@/types'
 
-export function generatePDF(expenses: ExpenseWithCategory[], title: string): Buffer {
+export function generatePDF(expenses: ExpenseWithCategory[], title: string): ArrayBuffer {
   const doc = new jsPDF()
 
   doc.setFontSize(18)
@@ -25,5 +25,5 @@ export function generatePDF(expenses: ExpenseWithCategory[], title: string): Buf
     foot: [['', 'Total', `Rs ${total.toLocaleString('en-IN')}`, '']],
   })
 
-  return Buffer.from(doc.output('arraybuffer'))
+  return doc.output('arraybuffer')
 }
