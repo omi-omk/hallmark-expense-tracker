@@ -1,0 +1,48 @@
+<h2>Key Flows</h2>
+<p class="subtitle">How the important actions work end-to-end</p>
+
+<div class="section">
+  <h3>🔐 Auth Flow</h3>
+  <div style="font-size:0.85rem;line-height:2;background:#f5f5f5;padding:1rem;border-radius:8px">
+    Owner creates worker account (name + email + temp password)<br>
+    → Worker receives email with temp password<br>
+    → Worker logs in, encouraged to change password<br>
+    → If worker forgets credentials → owner resets from Worker Detail screen<br>
+    → Owner account is seeded once at setup (not self-registerable)
+  </div>
+</div>
+
+<div class="section">
+  <h3>💸 Fund & Expense Flow</h3>
+  <div style="font-size:0.85rem;line-height:2;background:#f5f5f5;padding:1rem;border-radius:8px">
+    Owner sends real money to worker (outside app)<br>
+    → Owner opens Worker Detail → clicks "Add Funds" → enters ₹ amount + note<br>
+    → Worker's balance updates immediately<br>
+    → Worker logs in → sees updated balance<br>
+    → Worker adds expense → balance deducted automatically<br>
+    → If balance drops below threshold → owner gets in-app alert + email
+  </div>
+</div>
+
+<div class="section">
+  <h3>📊 Reports & Export Flow</h3>
+  <div style="font-size:0.85rem;line-height:2;background:#f5f5f5;padding:1rem;border-radius:8px">
+    Owner opens Reports → filters by worker / category / date range<br>
+    → Sees table: worker name · date · category · amount · comment<br>
+    → Clicks Export CSV → downloads spreadsheet<br>
+    → Clicks Export PDF → downloads formatted report
+  </div>
+</div>
+
+<div class="section">
+  <h3>🔔 Low Balance Alert Flow</h3>
+  <div style="font-size:0.85rem;line-height:2;background:#f5f5f5;padding:1rem;border-radius:8px">
+    Every time a worker records an expense:<br>
+    → App recalculates their balance<br>
+    → If balance &lt; threshold → send email to owner via Resend<br>
+    → Show red badge on that worker's card on owner dashboard<br>
+    → Alert dismissed when owner adds funds
+  </div>
+</div>
+
+<p class="subtitle">Reply in terminal — do these flows look right?</p>

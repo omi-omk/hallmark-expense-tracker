@@ -1,0 +1,42 @@
+<h2>3 Approaches to Build This</h2>
+<p class="subtitle">All use Next.js (Vercel-native). The difference is what handles your database, auth, and images.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Next.js + Supabase ⭐ Recommended</h3>
+      <p>One service (Supabase) handles your database, login system, and image storage. Next.js handles the UI and deploys to Vercel. Everything talks to each other out of the box.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>One dashboard for everything</li><li>Generous free tier</li><li>Excellent beginner docs</li><li>Built-in auth + storage</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Tied to Supabase platform</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Next.js + Firebase</h3>
+      <p>Google's Firebase handles database, login, and image storage. Very popular, lots of tutorials online.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Very popular, tons of tutorials</li><li>Good free tier</li><li>Real-time updates built-in</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>NoSQL database (harder for financial data)</li><li>More complex pricing as you grow</li><li>Harder to write reports/exports</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Next.js + Neon + Cloudinary + Resend</h3>
+      <p>Best-in-class tools stitched together: Neon for database, Cloudinary for images, Resend for email.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul><li>Each service is best-in-class</li><li>Most flexible</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>3–4 separate dashboards to manage</li><li>More setup complexity</li><li>Not beginner-friendly</li></ul></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:1.5rem">Click your preference, or just reply in the terminal.</p>

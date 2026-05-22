@@ -1,0 +1,46 @@
+<h2>Architecture Overview</h2>
+<p class="subtitle">How the pieces fit together</p>
+
+<div class="mockup">
+  <div class="mockup-header">System Architecture</div>
+  <div class="mockup-body" style="font-family:monospace;font-size:0.85rem;line-height:2">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;text-align:center">
+      <div style="background:#f0f4ff;border-radius:8px;padding:1rem">
+        <div style="font-weight:bold;margin-bottom:0.5rem">🌐 Browser</div>
+        <div style="font-size:0.8rem">Next.js (React)</div>
+        <div style="font-size:0.75rem;color:#666">Owner & Worker UI<br/>Mobile-friendly</div>
+      </div>
+      <div style="background:#f0fff4;border-radius:8px;padding:1rem">
+        <div style="font-weight:bold;margin-bottom:0.5rem">⚙️ Server</div>
+        <div style="font-size:0.8rem">Next.js API Routes</div>
+        <div style="font-size:0.75rem;color:#666">Business logic<br/>Deployed on Vercel</div>
+      </div>
+      <div style="background:#fff7f0;border-radius:8px;padding:1rem">
+        <div style="font-weight:bold;margin-bottom:0.5rem">🗄️ Supabase</div>
+        <div style="font-size:0.8rem">PostgreSQL DB</div>
+        <div style="font-size:0.75rem;color:#666">Auth + Data + Images</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin:1rem 0;color:#888">↕ all talking to each other</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;text-align:center">
+      <div style="background:#fdf0ff;border-radius:8px;padding:0.75rem">
+        <div style="font-weight:bold;font-size:0.85rem">📧 Resend</div>
+        <div style="font-size:0.75rem;color:#666">Email notifications<br/>(low balance alerts)</div>
+      </div>
+      <div style="background:#f0faff;border-radius:8px;padding:0.75rem">
+        <div style="font-weight:bold;font-size:0.85rem">🖼️ Supabase Storage</div>
+        <div style="font-size:0.75rem;color:#666">Expense receipt images<br/>(built into Supabase)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:1.5rem">
+  <h3>Two user roles</h3>
+  <ul>
+    <li><strong>Owner (admin)</strong> — one account, manages workers, funds balances, views all reports</li>
+    <li><strong>Worker</strong> — multiple accounts, sees own balance, logs own expenses</li>
+  </ul>
+</div>
+
+<p class="subtitle">Reply in the terminal — does this architecture make sense?</p>

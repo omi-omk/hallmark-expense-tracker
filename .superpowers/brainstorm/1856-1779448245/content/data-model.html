@@ -1,0 +1,59 @@
+<h2>Data Model</h2>
+<p class="subtitle">What gets stored in the database — 5 simple tables</p>
+
+<div class="mockup">
+  <div class="mockup-header">Database Tables</div>
+  <div class="mockup-body" style="display:grid;gap:1rem">
+
+    <div style="background:#f0f4ff;border-radius:8px;padding:1rem">
+      <div style="font-weight:bold;margin-bottom:0.5rem">👤 profiles</div>
+      <div style="font-size:0.8rem;color:#444;line-height:1.8">
+        id, name, email, role (<em>owner</em> or <em>worker</em>), created_at
+      </div>
+      <div style="font-size:0.75rem;color:#888;margin-top:0.25rem">One row per user. Linked to Supabase login.</div>
+    </div>
+
+    <div style="background:#f0fff4;border-radius:8px;padding:1rem">
+      <div style="font-weight:bold;margin-bottom:0.5rem">💰 fund_transfers</div>
+      <div style="font-size:0.8rem;color:#444;line-height:1.8">
+        id, worker_id, amount (₹), note, created_at
+      </div>
+      <div style="font-size:0.75rem;color:#888;margin-top:0.25rem">Each time owner tops up a worker's balance. Balance = sum of these minus sum of expenses.</div>
+    </div>
+
+    <div style="background:#fff7f0;border-radius:8px;padding:1rem">
+      <div style="font-weight:bold;margin-bottom:0.5rem">🏷️ categories</div>
+      <div style="font-size:0.8rem;color:#444;line-height:1.8">
+        id, name, created_by (worker_id or null), is_global
+      </div>
+      <div style="font-size:0.75rem;color:#888;margin-top:0.25rem">Global categories have <em>is_global = true</em> (set by owner). Workers can add their own with <em>is_global = false</em>.</div>
+    </div>
+
+    <div style="background:#fdf0ff;border-radius:8px;padding:1rem">
+      <div style="font-weight:bold;margin-bottom:0.5rem">🧾 expenses</div>
+      <div style="font-size:0.8rem;color:#444;line-height:1.8">
+        id, worker_id, category_id, amount (₹), note, image_url, created_at
+      </div>
+      <div style="font-size:0.75rem;color:#888;margin-top:0.25rem">Each expense a worker records. image_url points to Supabase Storage (optional).</div>
+    </div>
+
+    <div style="background:#f0faff;border-radius:8px;padding:1rem">
+      <div style="font-weight:bold;margin-bottom:0.5rem">⚙️ settings</div>
+      <div style="font-size:0.8rem;color:#444;line-height:1.8">
+        low_balance_threshold (₹)
+      </div>
+      <div style="font-size:0.75rem;color:#888;margin-top:0.25rem">Single row. Owner can change the low-balance alert amount.</div>
+    </div>
+
+  </div>
+</div>
+
+<div class="section" style="margin-top:1rem">
+  <h3>How balance is calculated</h3>
+  <p style="font-family:monospace;background:#f5f5f5;padding:0.75rem;border-radius:6px;font-size:0.9rem">
+    Worker Balance = Σ fund_transfers − Σ expenses
+  </p>
+  <p style="font-size:0.85rem;color:#555">No separate balance column — it's always computed fresh from the records. This means the history is always accurate.</p>
+</div>
+
+<p class="subtitle">Does this data model look right? Reply in the terminal.</p>
