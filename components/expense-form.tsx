@@ -65,6 +65,10 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
 
     const expense = await res.json()
 
+    if (expense.low_balance_notified) {
+      toast.warning('Your balance is low — your manager has been notified.')
+    }
+
     if (image) {
       const image_url = await uploadImage(image, expense.id)
       if (image_url) {

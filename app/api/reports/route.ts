@@ -14,17 +14,52 @@ export async function GET(request: Request) {
   const to = searchParams.get('to')
 
   const admin = createAdminClient()
-  let query = admin
+
+  let expenseQuery = admin
     .from('expenses')
     .select('*, categories(name), profiles(name)')
     .order('date', { ascending: false })
+  if (worker_id) expenseQuery = expenseQuery.eq('worker_id', worker_id)
+  if (category_id) expenseQuery = expenseQuery.eq('category_id', category_id)
+  if (from) expenseQuery = expenseQuery.gte('date', from)
+  if (to) expenseQuery = expenseQuery.lte('date', to)
 
-  if (worker_id) query = query.eq('worker_id', worker_id)
-  if (category_id) query = query.eq('category_id', category_id)
-  if (from) query = query.gte('date', from)
-  if (to) query = query.lte('date', to)
+  let transferQuery = admin
+    .from('fund_transfers')
+    .select('*, profiles(name)')
+    .order('created_at', { ascending: false })
+  if (worker_id) transferQuery = transferQuery.eq('worker_id', worker_id)
+  if (from) transferQuery = transferQuery.gte('created_at', from)
+  if (to) transferQuery = transferQuery.lte('created_at', to + 'T23:59:59')
 
-  const { data, error } = await query
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data)
+  // Don't filter transfers by category
+  if (category_id) {
+    // if filtering by category, omit transfers (they have no category)
+    const { data: expenses, error } = await expenseQuery
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json((expenses ?? []).map((e: any) => ({ ...e, type: 'debit' })))
+  }
+
+  const [expensesRes, transfersRes] = await Promise.all([expenseQuery, transferQuery])
+  if (expensesRes.error) return NextResponse.json({ error: expensesRes.error.message }, { status: 500 })
+  if (transfersRes.error) return NextResponse.json({ error: transfersRes.error.message }, { status: 500 })
+
+  const expenses = (expensesRes.data ?? []).map((e: any) => ({
+    ...e,
+    type: 'debit',
+    date: e.date,
+  }))
+  const transfers = (transfersRes.data ?? []).map((t: any) => ({
+    ...t,
+    type: 'credit',
+    date: t.created_at.split('T')[0],
+    categories: { name: '—' },
+    comment: t.note ?? null,
+  }))
+
+  const combined = [...expenses, ...transfers].sort((a, b) =>
+    b.date.localeCompare(a.date)
+  )
+
+  return NextResponse.json(combined)
 }

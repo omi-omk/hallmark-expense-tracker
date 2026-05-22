@@ -43,6 +43,7 @@ export async function POST(request: Request) {
   const balance = calculateBalance(transfersRes.data ?? [], expensesRes.data ?? [])
   const threshold = profileRes.data?.low_balance_threshold ?? 500
 
+  let low_balance_notified = false
   if (isLowBalance(balance, threshold) && settingsRes.data?.owner_alert_email) {
     await checkAndNotifyLowBalance(
       profileRes.data?.name ?? 'Worker',
@@ -50,7 +51,8 @@ export async function POST(request: Request) {
       threshold,
       settingsRes.data.owner_alert_email
     ).catch(() => {}) // email failure is non-blocking
+    low_balance_notified = true
   }
 
-  return NextResponse.json(expense, { status: 201 })
+  return NextResponse.json({ ...expense, low_balance_notified }, { status: 201 })
 }
