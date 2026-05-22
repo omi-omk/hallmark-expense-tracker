@@ -1,0 +1,46 @@
+import { createClient } from '@/lib/supabase/server'
+import { NextResponse } from 'next/server'
+
+export async function GET() {
+  const supabase = await createClient()
+  const { data } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('is_global', true)
+    .order('name')
+  return NextResponse.json(data ?? [])
+}
+
+export async function POST(request: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('role, id').eq('id', user?.id ?? '').single()
+  if (profile?.role !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { name } = await request.json()
+  if (!name?.trim()) return NextResponse.json({ error: 'Name required' }, { status: 400 })
+
+  const { error } = await supabase.from('categories').insert({
+    name: name.trim(),
+    is_global: true,
+    created_by: profile.id,
+  })
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true }, { status: 201 })
+}
+
+export async function DELETE(request: Request) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id ?? '').single()
+  if (profile?.role !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const { id } = await request.json()
+
+  const { data: cat } = await supabase.from('categories').select('is_system').eq('id', id).single()
+  if (cat?.is_system) return NextResponse.json({ error: 'Cannot delete system category' }, { status: 400 })
+
+  const { error } = await supabase.from('categories').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
