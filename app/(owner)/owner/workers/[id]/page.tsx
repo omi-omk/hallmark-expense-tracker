@@ -3,6 +3,7 @@ import { redirect, notFound } from 'next/navigation'
 import { calculateBalance } from '@/lib/balance'
 import { FundForm } from '@/components/fund-form'
 import { ResetCredentialsForm } from '@/components/reset-credentials-form'
+import { ThresholdForm } from '@/components/threshold-form'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ExpenseWithCategory, FundTransfer } from '@/types'
 
@@ -42,9 +43,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
           <p className={`text-3xl font-bold ${isLow ? 'text-red-600' : ''}`}>
             ₹{balance.toLocaleString('en-IN')}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Alert threshold: ₹{worker.low_balance_threshold.toLocaleString('en-IN')}
-          </p>
+          <ThresholdForm workerId={worker.id} currentThreshold={worker.low_balance_threshold} />
         </CardContent>
       </Card>
 
@@ -73,12 +72,19 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
           {expenses.length === 0 ? (
             <p className="text-sm text-muted-foreground">No expenses yet.</p>
           ) : expenses.map(e => (
-            <div key={e.id} className="flex justify-between text-sm py-1 border-b last:border-0">
-              <div>
-                <p className="font-medium">{e.categories.name}</p>
-                <p className="text-muted-foreground">{e.date}{e.comment ? ` — ${e.comment}` : ''}</p>
+            <div key={e.id} className="py-2 border-b last:border-0">
+              <div className="flex justify-between text-sm">
+                <div>
+                  <p className="font-medium">{e.categories.name}</p>
+                  <p className="text-muted-foreground">{e.date}{e.comment ? ` — ${e.comment}` : ''}</p>
+                </div>
+                <p className="text-red-600 shrink-0">-₹{e.amount.toLocaleString('en-IN')}</p>
               </div>
-              <p className="text-red-600">-₹{e.amount.toLocaleString('en-IN')}</p>
+              {e.image_url && (
+                <a href={e.image_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
+                  View receipt
+                </a>
+              )}
             </div>
           ))}
         </CardContent>

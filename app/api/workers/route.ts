@@ -11,6 +11,10 @@ const createWorkerSchema = z.object({
 
 export async function GET() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id ?? '').single()
+  if (profile?.role !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -49,6 +53,26 @@ export async function POST(request: Request) {
     low_balance_threshold,
   })
   if (profileError) return NextResponse.json({ error: profileError.message }, { status: 500 })
+
+  // Send welcome email with credentials
+  try {
+    const { Resend } = require('resend')
+    const resend = new Resend(process.env.RESEND_API_KEY)
+    await resend.emails.send({
+      from: 'noreply@expensetracker.app',
+      to: email,
+      subject: 'Your Expense Tracker account is ready',
+      html: `
+        <p>Hi ${name},</p>
+        <p>Your Expense Tracker account has been created. Here are your login details:</p>
+        <p><strong>Email:</strong> ${email}<br/>
+        <strong>Password:</strong> ${password}</p>
+        <p>Please log in and change your password.</p>
+      `,
+    })
+  } catch (_) {
+    // Email failure is non-blocking — account already created successfully
+  }
 
   return NextResponse.json({ id: authUser.user.id }, { status: 201 })
 }
