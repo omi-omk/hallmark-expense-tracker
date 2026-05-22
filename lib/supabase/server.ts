@@ -28,3 +28,14 @@ export function createAdminClient() {
     { auth: { autoRefreshToken: false, persistSession: false } }
   )
 }
+
+// Check if a user is an owner using admin client (bypasses RLS)
+export async function isOwner(userId: string): Promise<boolean> {
+  const admin = createAdminClient()
+  const { data } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('id', userId)
+    .single()
+  return data?.role === 'owner'
+}

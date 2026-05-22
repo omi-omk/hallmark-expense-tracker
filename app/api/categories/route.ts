@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, isOwner } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export async function GET() {
@@ -17,8 +17,8 @@ export async function GET() {
 export async function POST(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role, id').eq('id', user?.id ?? '').single()
-  if (profile?.role !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isOwner(user.id))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { name } = await request.json()
   if (!name?.trim()) return NextResponse.json({ error: 'Name required' }, { status: 400 })
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
   const { error } = await supabase.from('categories').insert({
     name: name.trim(),
     is_global: true,
-    created_by: profile.id,
+    created_by: user.id,
   })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true }, { status: 201 })
@@ -35,8 +35,8 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('role').eq('id', user?.id ?? '').single()
-  if (profile?.role !== 'owner') return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!(await isOwner(user.id))) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
   const { id } = await request.json()
   if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 })
