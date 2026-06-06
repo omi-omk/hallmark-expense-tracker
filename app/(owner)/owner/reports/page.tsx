@@ -7,12 +7,21 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { toast } from 'sonner'
+import { buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
 import type { Category, Profile } from '@/types'
+
+interface ReportRow extends ReportEntry {
+  worker_id?: string
+  date?: string
+  comment?: string
+  note?: string
+  profiles?: { name?: string | null } | null
+}
 
 export default function ReportsPage() {
   const [workers, setWorkers] = useState<Profile[]>([])
   const [categories, setCategories] = useState<Category[]>([])
-  const [expenses, setExpenses] = useState<any[]>([])
+  const [expenses, setExpenses] = useState<ReportRow[]>([])
   const [filters, setFilters] = useState({ worker_id: '', category_id: '', from: '', to: '' })
   const [loading, setLoading] = useState(false)
   const [hasRun, setHasRun] = useState(false)
@@ -23,6 +32,7 @@ export default function ReportsPage() {
   }, [])
 
   async function runReport() {
+    if (loading) return
     setLoading(true)
     try {
       const params = new URLSearchParams(
@@ -56,8 +66,7 @@ export default function ReportsPage() {
     return `/api/reports/${format}?${params}`
   }
 
-  const totalCredits = expenses.filter((e: any) => e.type === 'credit').reduce((s: number, e: any) => s + e.amount, 0)
-  const totalDebits = expenses.filter((e: any) => e.type === 'debit').reduce((s: number, e: any) => s + e.amount, 0)
+  const analytics = buildReportAnalytics(expenses)
 
   return (
     <div className="space-y-6">
@@ -67,11 +76,11 @@ export default function ReportsPage() {
         <CardContent className="pt-6 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
-              <Label>Worker</Label>
+              <Label>Employee</Label>
               <Select onValueChange={(v: string | null) => updateFilter('worker_id', v && v !== 'all' ? v : '')}>
-                <SelectTrigger><SelectValue placeholder="All workers" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="All employees" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All workers</SelectItem>
+                  <SelectItem value="all">All employees</SelectItem>
                   {workers.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
                 </SelectContent>
               </Select>
@@ -110,8 +119,8 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between flex-wrap gap-2">
             <p className="text-sm font-medium">
               {expenses.length} entries ·{' '}
-              <span className="text-green-600">+₹{totalCredits.toLocaleString('en-IN')} credited</span>{' · '}
-              <span className="text-red-600">-₹{totalDebits.toLocaleString('en-IN')} spent</span>
+              <span className="text-green-600">+₹{analytics.totalCredits.toLocaleString('en-IN')} credited</span>{' · '}
+              <span className="text-red-600">-₹{analytics.totalDebits.toLocaleString('en-IN')} spent</span>
             </p>
             <div className="flex gap-2">
               <a href={exportUrl('csv')} download className={buttonVariants({ variant: 'outline', size: 'sm' })}>
@@ -123,12 +132,70 @@ export default function ReportsPage() {
             </div>
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Total Credited</p>
+                <p className="mt-1 text-xl font-semibold text-green-600">₹{analytics.totalCredits.toLocaleString('en-IN')}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Total Spent</p>
+                <p className="mt-1 text-xl font-semibold text-red-600">₹{analytics.totalDebits.toLocaleString('en-IN')}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Net Movement</p>
+                <p className={analytics.netMovement >= 0 ? 'mt-1 text-xl font-semibold text-green-600' : 'mt-1 text-xl font-semibold text-red-600'}>
+                  {analytics.netMovement >= 0 ? '+' : '-'}₹{Math.abs(analytics.netMovement).toLocaleString('en-IN')}
+                </p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs text-muted-foreground">Top Category</p>
+                <p className="mt-1 truncate text-xl font-semibold">{analytics.topCategory?.name ?? '—'}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div>
+                <h2 className="font-semibold">Category Spend</h2>
+                <p className="text-xs text-muted-foreground">Debit entries only. Credits are excluded from this chart.</p>
+              </div>
+              {analytics.categorySpend.length > 0 ? (
+                <div className="space-y-3">
+                  {analytics.categorySpend.map(category => (
+                    <div key={category.name} className="space-y-1">
+                      <div className="flex items-center justify-between gap-3 text-sm">
+                        <span className="truncate font-medium">{category.name}</span>
+                        <span className="shrink-0 text-muted-foreground">₹{category.amount.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="h-2 rounded-full bg-muted">
+                        <div
+                          className="h-2 rounded-full bg-primary"
+                          style={{ width: `${category.percent}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No category spend to chart for these filters.</p>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="overflow-auto rounded-md border">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr className="border-b text-left">
                   <th className="py-2 px-3">Type</th>
-                  <th className="py-2 px-3">Worker</th>
+                  <th className="py-2 px-3">Employee</th>
                   <th className="py-2 px-3">Date</th>
                   <th className="py-2 px-3">Category</th>
                   <th className="py-2 px-3">Amount</th>
@@ -136,7 +203,7 @@ export default function ReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {expenses.map((e: any) => (
+                {expenses.map(e => (
                   <tr key={e.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="py-2 px-3">
                       <span className={e.type === 'credit' ? 'text-green-600 font-medium' : 'text-red-600 font-medium'}>

@@ -1,6 +1,28 @@
 import { createClient, createAdminClient, isOwner } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+interface ExpenseReportRow {
+  id: string
+  worker_id: string
+  category_id: string
+  amount: number
+  date: string
+  comment: string | null
+  image_url?: string | null
+  created_at: string
+  categories: { name: string } | null
+  profiles: { name: string } | null
+}
+
+interface TransferReportRow {
+  id: string
+  worker_id: string
+  amount: number
+  note: string | null
+  created_at: string
+  profiles: { name: string } | null
+}
+
 export async function GET(request: Request) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -37,19 +59,19 @@ export async function GET(request: Request) {
     // if filtering by category, omit transfers (they have no category)
     const { data: expenses, error } = await expenseQuery
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json((expenses ?? []).map((e: any) => ({ ...e, type: 'debit' })))
+    return NextResponse.json(((expenses ?? []) as ExpenseReportRow[]).map(e => ({ ...e, type: 'debit' })))
   }
 
   const [expensesRes, transfersRes] = await Promise.all([expenseQuery, transferQuery])
   if (expensesRes.error) return NextResponse.json({ error: expensesRes.error.message }, { status: 500 })
   if (transfersRes.error) return NextResponse.json({ error: transfersRes.error.message }, { status: 500 })
 
-  const expenses = (expensesRes.data ?? []).map((e: any) => ({
+  const expenses = ((expensesRes.data ?? []) as ExpenseReportRow[]).map(e => ({
     ...e,
     type: 'debit',
     date: e.date,
   }))
-  const transfers = (transfersRes.data ?? []).map((t: any) => ({
+  const transfers = ((transfersRes.data ?? []) as TransferReportRow[]).map(t => ({
     ...t,
     type: 'credit',
     date: t.created_at.split('T')[0],

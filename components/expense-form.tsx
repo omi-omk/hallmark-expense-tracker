@@ -29,6 +29,7 @@ interface ExpenseFormProps {
 export function ExpenseForm({ categories }: ExpenseFormProps) {
   const [image, setImage] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [submitted, setSubmitted] = useState(false)
   const router = useRouter()
 
   const today = new Date().toISOString().split('T')[0]
@@ -49,44 +50,56 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
   }
 
   async function onSubmit(data: FormData) {
+    if (submitted || uploading || isSubmitting) return
+    let completed = false
+    setSubmitted(true)
     setUploading(true)
 
-    const res = await fetch('/api/expenses', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...data, image_url: null }),
-    })
+    try {
+      const res = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...data, image_url: null }),
+      })
 
-    if (!res.ok) {
-      toast.error('Failed to save expense.')
+      if (!res.ok) {
+        toast.error('Failed to save expense.')
+        setSubmitted(false)
+        return
+      }
+
+      const expense = await res.json()
+
+      if (expense.low_balance_notified) {
+        toast.warning('Your balance is low — your manager has been notified.')
+      }
+
+      if (image) {
+        const image_url = await uploadImage(image, expense.id)
+        if (image_url) {
+          await fetch(`/api/expenses/${expense.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ image_url }),
+          })
+        } else {
+          toast.error('Expense saved but image upload failed.')
+        }
+      }
+
+      toast.success('Expense added successfully')
+      completed = true
+      router.push('/dashboard')
+      router.refresh()
+    } finally {
       setUploading(false)
-      return
-    }
-
-    const expense = await res.json()
-
-    if (expense.low_balance_notified) {
-      toast.warning('Your balance is low — your manager has been notified.')
-    }
-
-    if (image) {
-      const image_url = await uploadImage(image, expense.id)
-      if (image_url) {
-        await fetch(`/api/expenses/${expense.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ image_url }),
-        })
-      } else {
-        toast.error('Expense saved but image upload failed.')
+      if (!completed) {
+        setSubmitted(false)
       }
     }
-
-    setUploading(false)
-    toast.success('Expense added successfully')
-    router.push('/dashboard')
-    router.refresh()
   }
+
+  const submitting = isSubmitting || uploading || submitted
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
@@ -135,8 +148,8 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
         <p className="text-xs text-muted-foreground">Max 5 MB. Photo of bill or receipt.</p>
       </div>
 
-      <Button type="submit" className="w-full" disabled={isSubmitting || uploading}>
-        {isSubmitting || uploading ? 'Saving...' : 'Add Expense'}
+      <Button type="submit" className="w-full" disabled={submitting}>
+        {submitting ? 'Saving...' : 'Add Expense'}
       </Button>
     </form>
   )

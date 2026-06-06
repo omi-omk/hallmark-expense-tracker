@@ -32,7 +32,7 @@ export default async function OwnerDashboard() {
     w => w.balance < w.low_balance_threshold
   ).length
 
-  // Sort: low-balance workers first
+  // Sort: low-balance employees first
   const sorted = [...workersWithBalance].sort((a, b) => {
     const aLow = a.balance < a.low_balance_threshold
     const bLow = b.balance < b.low_balance_threshold
@@ -47,13 +47,13 @@ export default async function OwnerDashboard() {
         <h1 className="text-2xl font-bold">Dashboard</h1>
         {lowBalanceCount > 0 && (
           <div className="flex items-center gap-2 text-red-600 text-sm font-medium bg-red-50 px-3 py-1.5 rounded-full border border-red-200">
-            <span>⚠️ {lowBalanceCount} worker{lowBalanceCount > 1 ? 's' : ''} with low balance</span>
+            <span>⚠️ {lowBalanceCount} employee{lowBalanceCount > 1 ? 's' : ''} with low balance</span>
           </div>
         )}
       </div>
 
       {sorted.length === 0 ? (
-        <p className="text-muted-foreground">No workers yet. Add workers from the Workers page.</p>
+        <p className="text-muted-foreground">No employees yet. Add employees from the Employees page.</p>
       ) : (
         <div className="space-y-3">
           {sorted.map(worker => (

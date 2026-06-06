@@ -21,7 +21,7 @@ export async function POST(request: Request) {
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
   const { data: targetWorker } = await admin.from('profiles').select('role').eq('id', parsed.data.worker_id).single()
-  if (!targetWorker || targetWorker.role !== 'worker') return NextResponse.json({ error: 'Invalid worker' }, { status: 400 })
+  if (!targetWorker || targetWorker.role !== 'worker') return NextResponse.json({ error: 'Invalid employee' }, { status: 400 })
 
   const { error } = await admin.from('fund_transfers').insert(parsed.data)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

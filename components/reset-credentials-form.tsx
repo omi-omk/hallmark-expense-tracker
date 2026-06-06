@@ -19,6 +19,7 @@ export function ResetCredentialsForm({ workerId, currentName }: { workerId: stri
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     if (!hasChanges) return
     setLoading(true)
 
@@ -27,31 +28,34 @@ export function ResetCredentialsForm({ workerId, currentName }: { workerId: stri
     if (email) body.email = email
     if (password) body.password = password
 
-    const res = await fetch(`/api/workers/${workerId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    try {
+      const res = await fetch(`/api/workers/${workerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
 
-    if (res.ok) {
-      toast.success('Worker updated successfully')
-      setEmail('')
-      setPassword('')
-      router.refresh()
-    } else {
-      toast.error('Failed to update worker')
+      if (res.ok) {
+        toast.success('Employee updated successfully')
+        setEmail('')
+        setPassword('')
+        router.refresh()
+      } else {
+        toast.error('Failed to update employee')
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
     <Card>
-      <CardHeader><CardTitle className="text-base">Edit Worker</CardTitle></CardHeader>
+      <CardHeader><CardTitle className="text-base">Edit Employee</CardTitle></CardHeader>
       <CardContent>
         <form onSubmit={handleSave} className="space-y-3">
           <div className="space-y-1">
             <Label className="text-sm">Name</Label>
-            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Worker name" />
+            <Input value={name} onChange={e => setName(e.target.value)} placeholder="Employee name" />
           </div>
           <div className="space-y-1">
             <Label className="text-sm">New Email (optional)</Label>
