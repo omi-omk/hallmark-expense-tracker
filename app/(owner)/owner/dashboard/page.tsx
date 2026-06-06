@@ -1,6 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
+import Link from 'next/link'
 import { calculateBalance } from '@/lib/balance'
 import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
 import { WorkerCard } from '@/components/worker-card'
@@ -70,6 +71,9 @@ export default async function OwnerDashboard() {
   const lowBalanceCount = workersWithBalance.filter(
     w => w.balance < w.low_balance_threshold
   ).length
+  const lowBalanceWorkers = workersWithBalance.filter(
+    w => w.balance < w.low_balance_threshold
+  )
 
   // Sort: low-balance employees first
   const sorted = [...workersWithBalance].sort((a, b) => {
@@ -116,9 +120,9 @@ export default async function OwnerDashboard() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-bold">Dashboard</h1>
         {lowBalanceCount > 0 && (
-          <div className="flex items-center gap-2 text-red-600 text-sm font-medium bg-red-50 px-3 py-1.5 rounded-full border border-red-200">
+          <Link href="#low-balance-employees" className="flex items-center gap-2 text-red-600 text-sm font-medium bg-red-50 px-3 py-1.5 rounded-full border border-red-200 hover:bg-red-100">
             <span>⚠️ {lowBalanceCount} employee{lowBalanceCount > 1 ? 's' : ''} with low balance</span>
-          </div>
+          </Link>
         )}
       </div>
 
@@ -126,16 +130,29 @@ export default async function OwnerDashboard() {
         <div key={chart.key}>{chart.node}</div>
       ))}
 
+      {settings.dashboard_show_employee_cards && lowBalanceWorkers.length > 0 && (
+        <section id="low-balance-employees" className="scroll-mt-20 space-y-3">
+          <div>
+            <h2 className="font-semibold text-red-700">Low Balance Employees</h2>
+            <p className="text-sm text-muted-foreground">These employees are below their alert threshold.</p>
+          </div>
+          {lowBalanceWorkers.map(worker => (
+            <WorkerCard key={`low-${worker.id}`} worker={worker} />
+          ))}
+        </section>
+      )}
+
       {!hasVisibleDashboardSection ? (
         <p className="text-muted-foreground">All dashboard sections are hidden. Enable sections from Settings.</p>
       ) : settings.dashboard_show_employee_cards && sorted.length === 0 ? (
         <p className="text-muted-foreground">No employees yet. Add employees from the Employees page.</p>
       ) : settings.dashboard_show_employee_cards ? (
-        <div className="space-y-3">
+        <section className="space-y-3">
+          <h2 className="font-semibold">All Employees</h2>
           {sorted.map(worker => (
             <WorkerCard key={worker.id} worker={worker} />
           ))}
-        </div>
+        </section>
       ) : null}
     </div>
   )

@@ -1,5 +1,7 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
+import Link from 'next/link'
+import { ChevronRight, ImageIcon } from 'lucide-react'
 import { calculateBalance } from '@/lib/balance'
 import { FundForm } from '@/components/fund-form'
 import { ResetCredentialsForm } from '@/components/reset-credentials-form'
@@ -7,6 +9,7 @@ import { ThresholdForm } from '@/components/threshold-form'
 import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
+import { ownerExpenseDetailUrl } from '@/lib/transactions/urls'
 import type { ExpenseWithCategory, FundTransfer } from '@/types'
 
 export default async function WorkerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -98,25 +101,32 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
                     </div>
                   </div>
                 ) : (
-                  <div key={`e-${item.entry.id}`} className="py-2 border-b last:border-0">
-                    <div className="flex justify-between text-sm">
-                      <div>
-                        <p className="font-medium">{(item.entry as ExpenseWithCategory).categories.name}</p>
+                  <Link
+                    key={`e-${item.entry.id}`}
+                    href={ownerExpenseDetailUrl(item.entry.id)}
+                    className="block border-b py-2 last:border-0 hover:bg-muted/30"
+                  >
+                    <div className="flex justify-between gap-3 text-sm">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate font-medium">{(item.entry as ExpenseWithCategory).categories.name}</p>
+                          {(item.entry as ExpenseWithCategory).image_url && (
+                            <ImageIcon className="h-4 w-4 shrink-0 text-blue-600" aria-label="Receipt uploaded" />
+                          )}
+                        </div>
                         {(item.entry as ExpenseWithCategory).comment && (
-                          <p className="text-muted-foreground">{(item.entry as ExpenseWithCategory).comment}</p>
+                          <p className="truncate text-muted-foreground">{(item.entry as ExpenseWithCategory).comment}</p>
                         )}
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="font-medium text-red-600">-₹{item.entry.amount.toLocaleString('en-IN')}</p>
-                        <p className="text-xs text-muted-foreground">{dateStr}, {timeStr}</p>
+                      <div className="flex shrink-0 items-center gap-2 text-right">
+                        <div>
+                          <p className="font-medium text-red-600">-₹{item.entry.amount.toLocaleString('en-IN')}</p>
+                          <p className="text-xs text-muted-foreground">{dateStr}, {timeStr}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
                       </div>
                     </div>
-                    {(item.entry as ExpenseWithCategory).image_url && (
-                      <a href={(item.entry as ExpenseWithCategory).image_url!} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 inline-block">
-                        View receipt
-                      </a>
-                    )}
-                  </div>
+                  </Link>
                 )
               })
           )}

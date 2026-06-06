@@ -6,6 +6,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import Link from 'next/link'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { employeeExpenseDetailUrl } from '@/lib/transactions/urls'
+import { ChevronRight, ImageIcon } from 'lucide-react'
 import type { ExpenseWithCategory, FundTransfer } from '@/types'
 
 export default async function WorkerDashboard() {
@@ -76,15 +78,23 @@ export default async function WorkerDashboard() {
             }
             const e = entry.data as ExpenseWithCategory
             return (
-              <Card key={`e-${e.id}`}>
-                <CardContent className="py-3 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-sm">{e.categories.name}</p>
-                    <p className="text-xs text-muted-foreground">{e.date}</p>
-                  </div>
-                  <p className="font-semibold text-red-600">-₹{e.amount.toLocaleString('en-IN')}</p>
-                </CardContent>
-              </Card>
+              <Link key={`e-${e.id}`} href={employeeExpenseDetailUrl(e.id)} className="block">
+                <Card className="hover:bg-gray-50">
+                  <CardContent className="py-3 flex justify-between items-center gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium text-sm">{e.categories.name}</p>
+                        {e.image_url && <ImageIcon className="h-4 w-4 shrink-0 text-blue-600" aria-label="Receipt uploaded" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{e.date}</p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <p className="font-semibold text-red-600">-₹{e.amount.toLocaleString('en-IN')}</p>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             )
           })}
         </div>

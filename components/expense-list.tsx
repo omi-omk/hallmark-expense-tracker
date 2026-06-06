@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import { ChevronRight, ImageIcon } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { employeeExpenseDetailUrl } from '@/lib/transactions/urls'
 import type { Category, ExpenseWithCategory, FundTransfer } from '@/types'
 
 interface ExpenseListProps {
@@ -21,7 +23,6 @@ export function ExpenseList({ expenses, categories, transfers = [] }: ExpenseLis
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
-  const [selected, setSelected] = useState<ExpenseWithCategory | null>(null)
 
   const filteredExpenses = expenses.filter(e => {
     if (categoryFilter !== 'all' && e.category_id !== categoryFilter) return false
@@ -91,37 +92,27 @@ export function ExpenseList({ expenses, categories, transfers = [] }: ExpenseLis
 
             const e = entry.data
             return (
-              <Card key={`e-${e.id}`} className="cursor-pointer hover:bg-gray-50" onClick={() => setSelected(e)}>
-                <CardContent className="py-3 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-sm">{e.categories.name}</p>
-                    <p className="text-xs text-muted-foreground">{e.date}</p>
-                    {e.comment && <p className="text-xs text-muted-foreground truncate max-w-[200px]">{e.comment}</p>}
-                  </div>
-                  <p className="font-semibold text-red-600">-₹{e.amount.toLocaleString('en-IN')}</p>
-                </CardContent>
-              </Card>
+              <Link key={`e-${e.id}`} href={employeeExpenseDetailUrl(e.id)} className="block">
+                <Card className="cursor-pointer hover:bg-gray-50">
+                  <CardContent className="py-3 flex justify-between items-center gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium text-sm">{e.categories.name}</p>
+                        {e.image_url && <ImageIcon className="h-4 w-4 shrink-0 text-blue-600" aria-label="Receipt uploaded" />}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{e.date}</p>
+                      {e.comment && <p className="truncate text-xs text-muted-foreground">{e.comment}</p>}
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <p className="font-semibold text-red-600">-₹{e.amount.toLocaleString('en-IN')}</p>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             )
           })}
       </div>
-
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{selected?.categories.name}</DialogTitle>
-          </DialogHeader>
-          {selected && (
-            <div className="space-y-3">
-              <div><span className="text-sm text-muted-foreground">Amount: </span><span className="font-semibold text-red-600">-₹{selected.amount.toLocaleString('en-IN')}</span></div>
-              <div><span className="text-sm text-muted-foreground">Date: </span><span>{selected.date}</span></div>
-              {selected.comment && <div><span className="text-sm text-muted-foreground">Comment: </span><span>{selected.comment}</span></div>}
-              {selected.image_url && (
-                <img src={selected.image_url} alt="Receipt" className="w-full rounded-lg max-h-64 object-contain" />
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
