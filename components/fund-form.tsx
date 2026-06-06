@@ -22,24 +22,28 @@ export function FundForm({ workerId }: FundFormProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
 
-    const res = await fetch('/api/fund-transfers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ worker_id: workerId, amount: parseInt(amount), note }),
-    })
+    try {
+      const res = await fetch('/api/fund-transfers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ worker_id: workerId, amount: parseInt(amount), note }),
+      })
 
-    if (!res.ok) {
-      toast.error('Failed to add funds.')
-    } else {
-      toast.success(`₹${amount} added successfully`)
-      setOpen(false)
-      setAmount('')
-      setNote('')
-      router.refresh()
+      if (!res.ok) {
+        toast.error('Failed to add funds.')
+      } else {
+        toast.success(`₹${amount} added successfully`)
+        setOpen(false)
+        setAmount('')
+        setNote('')
+        router.refresh()
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (

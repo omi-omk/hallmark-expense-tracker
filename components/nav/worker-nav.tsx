@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Home, Receipt, PlusCircle, LogOut } from 'lucide-react'
 
@@ -13,35 +14,47 @@ const links = [
 export function WorkerNav() {
   const pathname = usePathname()
   const router = useRouter()
+  const [loggingOut, setLoggingOut] = useState(false)
 
   async function handleLogout() {
-    await fetch('/api/auth/signout', { method: 'POST' })
-    router.push('/login')
-    router.refresh()
+    if (loggingOut) return
+    setLoggingOut(true)
+    try {
+      await fetch('/api/auth/signout', { method: 'POST' })
+      router.push('/login')
+      router.refresh()
+    } finally {
+      setLoggingOut(false)
+    }
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+    <nav className="fixed right-0 top-0 bottom-0 w-14 bg-white border-l border-gray-200 z-50">
+      <div className="flex h-full flex-col items-center justify-start gap-2 pt-4">
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname === href
           return (
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-1 text-xs ${active ? 'text-primary' : 'text-muted-foreground'}`}
+              aria-label={label}
+              title={label}
+              className={`flex h-10 w-10 items-center justify-center rounded-lg text-xs ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-gray-100'}`}
             >
               <Icon className="h-5 w-5" />
-              {label}
+              <span className="sr-only">{label}</span>
             </Link>
           )
         })}
         <button
           onClick={handleLogout}
-          className="flex flex-col items-center gap-1 text-xs text-muted-foreground"
+          aria-label="Logout"
+          title="Logout"
+          disabled={loggingOut}
+          className="mt-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg text-xs text-muted-foreground hover:bg-gray-100"
         >
           <LogOut className="h-5 w-5" />
-          Logout
+          <span className="sr-only">Logout</span>
         </button>
       </div>
     </nav>

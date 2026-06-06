@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { Trash2 } from 'lucide-react'
 import type { Category } from '@/types'
+import { PushNotificationSettings } from '@/components/settings/push-notification-settings'
 
 export default function SettingsPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -34,59 +35,73 @@ export default function SettingsPage() {
     }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => {
+    void Promise.resolve().then(fetchData)
+  }, [])
 
   async function addCategory(e: React.FormEvent) {
     e.preventDefault()
+    if (addLoading) return
     if (!newCategory.trim()) return
     setAddLoading(true)
-    const res = await fetch('/api/categories', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: newCategory.trim() }),
-    })
-    if (res.ok) {
-      setNewCategory('')
-      fetchData()
-      toast.success('Category added')
-    } else {
-      const err = await res.json()
-      toast.error(err.error ?? 'Failed to add category')
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newCategory.trim() }),
+      })
+      if (res.ok) {
+        setNewCategory('')
+        fetchData()
+        toast.success('Category added')
+      } else {
+        const err = await res.json()
+        toast.error(err.error ?? 'Failed to add category')
+      }
+    } finally {
+      setAddLoading(false)
     }
-    setAddLoading(false)
   }
 
   async function deleteCategory(id: string) {
+    if (deletingId) return
     setDeletingId(id)
-    const res = await fetch('/api/categories', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    })
-    if (res.ok) {
-      fetchData()
-      toast.success('Category deleted')
-    } else {
-      const err = await res.json()
-      toast.error(err.error ?? 'Cannot delete category')
+    try {
+      const res = await fetch('/api/categories', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      })
+      if (res.ok) {
+        fetchData()
+        toast.success('Category deleted')
+      } else {
+        const err = await res.json()
+        toast.error(err.error ?? 'Cannot delete category')
+      }
+    } finally {
+      setDeletingId(null)
     }
-    setDeletingId(null)
   }
 
   async function saveAlertEmail(e: React.FormEvent) {
     e.preventDefault()
+    if (emailLoading) return
     setEmailLoading(true)
-    const res = await fetch('/api/settings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ owner_alert_email: alertEmail }),
-    })
-    if (res.ok) {
-      toast.success('Alert email saved')
-    } else {
-      toast.error('Failed to save email')
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owner_alert_email: alertEmail }),
+      })
+      if (res.ok) {
+        toast.success('Alert email saved')
+      } else {
+        toast.error('Failed to save email')
+      }
+    } finally {
+      setEmailLoading(false)
     }
-    setEmailLoading(false)
   }
 
   return (
@@ -109,10 +124,12 @@ export default function SettingsPage() {
             </Button>
           </form>
           <p className="text-xs text-muted-foreground mt-2">
-            Alerts are sent to this email when a worker&apos;s balance drops below their threshold.
+            Alerts are sent to this email when an employee&apos;s balance drops below their threshold.
           </p>
         </CardContent>
       </Card>
+
+      <PushNotificationSettings />
 
       <Card>
         <CardHeader><CardTitle>Global Categories</CardTitle></CardHeader>

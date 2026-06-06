@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   let low_balance_notified = false
   if (isLowBalance(balance, threshold) && settingsRes.data?.owner_alert_email) {
     await checkAndNotifyLowBalance(
-      profileRes.data?.name ?? 'Worker',
+      profileRes.data?.name ?? 'Employee',
       balance,
       threshold,
       settingsRes.data.owner_alert_email

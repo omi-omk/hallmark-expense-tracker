@@ -25,41 +25,47 @@ export default function WorkersPage() {
       const data = await res.json()
       setWorkers(data)
     } else {
-      toast.error('Failed to load workers')
+      toast.error('Failed to load employees')
     }
     setFetching(false)
   }
 
-  useEffect(() => { fetchWorkers() }, [])
+  useEffect(() => {
+    void Promise.resolve().then(fetchWorkers)
+  }, [])
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
-    const res = await fetch('/api/workers', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, low_balance_threshold: parseInt(form.low_balance_threshold) }),
-    })
-    if (!res.ok) {
-      const err = await res.json()
-      toast.error(err.error ?? 'Failed to create worker')
-    } else {
-      toast.success('Worker created successfully')
-      setOpen(false)
-      setForm({ name: '', email: '', password: '', low_balance_threshold: '500' })
-      fetchWorkers()
+    try {
+      const res = await fetch('/api/workers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, low_balance_threshold: parseInt(form.low_balance_threshold) }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        toast.error(err.error ?? 'Failed to create employee')
+      } else {
+        toast.success('Employee created successfully')
+        setOpen(false)
+        setForm({ name: '', email: '', password: '', low_balance_threshold: '500' })
+        fetchWorkers()
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Workers</h1>
+        <h1 className="text-2xl font-bold">Employees</h1>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger className={buttonVariants()}>+ Add Worker</DialogTrigger>
+          <DialogTrigger className={buttonVariants()}>+ Add Employee</DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>Add New Worker</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>Add New Employee</DialogTitle></DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4">
               {[
                 { label: 'Full Name', key: 'name', type: 'text', placeholder: 'Ravi Kumar' },
@@ -79,7 +85,7 @@ export default function WorkersPage() {
                 </div>
               ))}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Creating...' : 'Create Worker'}
+                {loading ? 'Creating...' : 'Create Employee'}
               </Button>
             </form>
           </DialogContent>
@@ -90,7 +96,7 @@ export default function WorkersPage() {
         {fetching ? (
           <p className="text-muted-foreground text-sm">Loading...</p>
         ) : workers.length === 0 ? (
-          <p className="text-muted-foreground text-sm">No workers yet.</p>
+          <p className="text-muted-foreground text-sm">No employees yet.</p>
         ) : (
           workers.map(worker => (
             <Link key={worker.id} href={`/owner/workers/${worker.id}`}>

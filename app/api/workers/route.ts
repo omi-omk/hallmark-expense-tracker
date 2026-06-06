@@ -68,13 +68,13 @@ export async function POST(request: Request) {
       subject: 'Your Expense Tracker account is ready',
       html: `
         <p>Hi ${name},</p>
-        <p>Your Expense Tracker account has been created. Here are your login details:</p>
+        <p>Your employee Expense Tracker account has been created. Here are your login details:</p>
         <p><strong>Email:</strong> ${email}<br/>
         <strong>Password:</strong> ${password}</p>
         <p>Please log in and change your password.</p>
       `,
     })
-  } catch (_) {
+  } catch {
     // Email failure is non-blocking — account already created successfully
   }
 

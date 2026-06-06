@@ -17,20 +17,24 @@ export default function LoginPage() {
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
     setError('')
 
-    const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
 
-    if (error) {
-      setError('Invalid email or password. Please try again.')
+      if (error) {
+        setError('Invalid email or password. Please try again.')
+        return
+      }
+
+      router.push('/')
+      router.refresh()
+    } finally {
       setLoading(false)
-      return
     }
-
-    router.push('/')
-    router.refresh()
   }
 
   return (

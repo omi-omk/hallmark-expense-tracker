@@ -13,19 +13,23 @@ export function ThresholdForm({ workerId, currentThreshold }: { workerId: string
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
+    if (loading) return
     setLoading(true)
-    const res = await fetch(`/api/workers/${workerId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ low_balance_threshold: parseInt(threshold) }),
-    })
-    if (res.ok) {
-      toast.success('Threshold updated')
-      router.refresh()
-    } else {
-      toast.error('Failed to update threshold')
+    try {
+      const res = await fetch(`/api/workers/${workerId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ low_balance_threshold: parseInt(threshold) }),
+      })
+      if (res.ok) {
+        toast.success('Threshold updated')
+        router.refresh()
+      } else {
+        toast.error('Failed to update threshold')
+      }
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   return (
