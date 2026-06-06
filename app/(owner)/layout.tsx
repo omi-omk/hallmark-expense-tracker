@@ -17,9 +17,9 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
   if (profile?.role !== 'owner') redirect('/dashboard')
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-row-reverse md:flex-row">
+    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
       <OwnerNav />
-      <main className="flex-1 p-4 pr-20 md:p-8 max-w-5xl">
+      <main className="w-full flex-1 p-4 md:max-w-5xl md:p-8">
         {children}
       </main>
     </div>

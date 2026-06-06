@@ -29,8 +29,8 @@ export function WorkerNav() {
   }
 
   return (
-    <nav className="fixed right-0 top-0 bottom-0 w-14 bg-white border-l border-gray-200 z-50">
-      <div className="flex h-full flex-col items-center justify-start gap-2 pt-4">
+    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white">
+      <div className="flex items-center gap-1 overflow-x-auto px-3 py-2">
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname === href
           return (
@@ -39,10 +39,10 @@ export function WorkerNav() {
               href={href}
               aria-label={label}
               title={label}
-              className={`flex h-10 w-10 items-center justify-center rounded-lg text-xs ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-gray-100'}`}
+              className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-xs ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-gray-100'}`}
             >
               <Icon className="h-5 w-5" />
-              <span className="sr-only">{label}</span>
+              <span>{label}</span>
             </Link>
           )
         })}
@@ -51,10 +51,10 @@ export function WorkerNav() {
           aria-label="Logout"
           title="Logout"
           disabled={loggingOut}
-          className="mt-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg text-xs text-muted-foreground hover:bg-gray-100"
+          className="ml-auto flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-xs text-muted-foreground hover:bg-gray-100 disabled:opacity-50"
         >
           <LogOut className="h-5 w-5" />
-          <span className="sr-only">Logout</span>
+          <span>Logout</span>
         </button>
       </div>
     </nav>

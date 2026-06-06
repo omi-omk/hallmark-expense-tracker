@@ -30,8 +30,8 @@ export function OwnerNav() {
   }
 
   return (
-    <nav className="fixed right-0 top-0 bottom-0 w-14 bg-white border-l border-gray-200 z-50 md:static md:w-56 md:min-h-screen md:border-l-0 md:border-r">
-      <div className="flex h-full flex-col items-center justify-start gap-2 pt-4 md:items-start md:pt-8 md:px-3">
+    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white md:static md:min-h-screen md:w-56 md:border-b-0 md:border-r">
+      <div className="flex items-center gap-1 overflow-x-auto px-3 py-2 md:h-full md:flex-col md:items-start md:justify-start md:overflow-visible md:px-3 md:pt-8">
         {links.map(({ href, label, icon: Icon }) => {
           const active = pathname.startsWith(href)
           return (
@@ -40,10 +40,10 @@ export function OwnerNav() {
               href={href}
               aria-label={label}
               title={label}
-              className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm md:w-full md:justify-start md:gap-3 md:px-3 md:py-2 ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-gray-100'}`}
+              className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-xs md:w-full md:justify-start md:text-sm ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-gray-100'}`}
             >
               <Icon className="h-5 w-5 shrink-0" />
-              <span className="hidden md:inline">{label}</span>
+              <span>{label}</span>
             </Link>
           )
         })}
@@ -52,10 +52,10 @@ export function OwnerNav() {
           aria-label="Logout"
           title="Logout"
           disabled={loggingOut}
-          className="mt-auto mb-4 flex h-10 w-10 items-center justify-center rounded-lg text-sm text-muted-foreground hover:bg-gray-100 md:w-full md:justify-start md:gap-3 md:px-3 md:py-2"
+          className="ml-auto flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-xs text-muted-foreground hover:bg-gray-100 disabled:opacity-50 md:mt-auto md:mb-4 md:ml-0 md:w-full md:justify-start md:text-sm"
         >
           <LogOut className="h-5 w-5 shrink-0" />
-          <span className="hidden md:inline">Logout</span>
+          <span>Logout</span>
         </button>
       </div>
     </nav>
