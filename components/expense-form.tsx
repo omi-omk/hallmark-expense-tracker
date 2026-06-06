@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 
 import { toast } from 'sonner'
-import { createClient } from '@/lib/supabase/client'
 import type { Category } from '@/types'
 
 const schema = z.object({
@@ -40,13 +39,17 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
   })
 
   async function uploadImage(file: File, expenseId: string): Promise<string | null> {
-    const supabase = createClient()
-    const ext = file.name.split('.').pop()
-    const path = `receipts/${expenseId}.${ext}`
-    const { error } = await supabase.storage.from('expense-images').upload(path, file)
-    if (error) return null
-    const { data } = supabase.storage.from('expense-images').getPublicUrl(path)
-    return data.publicUrl
+    const formData = new FormData()
+    formData.append('receipt', file)
+
+    const res = await fetch(`/api/expenses/${expenseId}/receipt`, {
+      method: 'POST',
+      body: formData,
+    })
+    if (!res.ok) return null
+
+    const data = await res.json()
+    return data.image_url ?? null
   }
 
   async function onSubmit(data: FormData) {
@@ -76,13 +79,7 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
 
       if (image) {
         const image_url = await uploadImage(image, expense.id)
-        if (image_url) {
-          await fetch(`/api/expenses/${expense.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ image_url }),
-          })
-        } else {
+        if (!image_url) {
           toast.error('Expense saved but image upload failed.')
         }
       }
