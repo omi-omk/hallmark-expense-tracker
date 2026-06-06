@@ -19,6 +19,7 @@ export function WorkerCard({ worker }: WorkerCardProps) {
             {isLow && <AlertTriangle className="h-4 w-4 text-red-500 shrink-0" />}
             <div>
               <p className="font-medium">{worker.name}</p>
+              {worker.title && <p className="text-sm text-muted-foreground">{worker.title}</p>}
               <p className="text-sm text-muted-foreground">{worker.email}</p>
             </div>
           </div>

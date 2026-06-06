@@ -1,8 +1,9 @@
-export type Role = 'owner' | 'worker'
+export type Role = 'owner' | 'admin' | 'worker'
 
 export interface Profile {
   id: string
   name: string
+  title: string | null
   email: string
   role: Role
   low_balance_threshold: number
@@ -40,6 +41,10 @@ export interface Expense {
 
 export interface Settings {
   owner_alert_email: string
+  dashboard_show_category_spend: boolean
+  dashboard_show_employee_spend: boolean
+  dashboard_show_employee_cards: boolean
+  dashboard_chart_order: 'category_first' | 'employee_first'
 }
 
 export interface WorkerWithBalance extends Profile {

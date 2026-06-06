@@ -5,6 +5,7 @@ export interface ReportEntry {
   type: ReportEntryType
   amount: number
   categories?: { name?: string | null } | null
+  profiles?: { name?: string | null } | null
 }
 
 export interface CategorySpend {
@@ -12,6 +13,8 @@ export interface CategorySpend {
   amount: number
   percent: number
 }
+
+export type EmployeeSpend = CategorySpend
 
 export interface ReportAnalytics {
   totalCredits: number
@@ -95,6 +98,25 @@ export function buildPieSlices(categorySpend: CategorySpend[]): PieSlice[] {
     startAngle = endAngle
     return slice
   })
+}
+
+export function buildEmployeeSpend(entries: ReportEntry[]): EmployeeSpend[] {
+  const debitEntries = entries.filter(entry => entry.type === 'debit')
+  const grouped = new Map<string, number>()
+
+  for (const entry of debitEntries) {
+    const name = entry.profiles?.name?.trim() || 'Unknown Employee'
+    grouped.set(name, (grouped.get(name) ?? 0) + entry.amount)
+  }
+
+  const maxAmount = Math.max(...grouped.values(), 0)
+  return [...grouped.entries()]
+    .map(([name, amount]) => ({
+      name,
+      amount,
+      percent: maxAmount > 0 ? Math.round((amount / maxAmount) * 100) : 0,
+    }))
+    .sort((a, b) => b.amount - a.amount || a.name.localeCompare(b.name))
 }
 
 function describeArc(cx: number, cy: number, radius: number, startAngle: number, endAngle: number): string {

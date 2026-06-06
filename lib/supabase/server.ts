@@ -29,7 +29,7 @@ export function createAdminClient() {
   )
 }
 
-// Check if a user is an owner using admin client (bypasses RLS)
+// Check if a user has owner-level access using admin client (bypasses RLS)
 export async function isOwner(userId: string): Promise<boolean> {
   const admin = createAdminClient()
   const { data } = await admin
@@ -37,5 +37,5 @@ export async function isOwner(userId: string): Promise<boolean> {
     .select('role')
     .eq('id', userId)
     .single()
-  return data?.role === 'owner'
+  return data?.role === 'owner' || data?.role === 'admin'
 }

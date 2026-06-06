@@ -14,7 +14,7 @@ export default async function Home() {
     .eq('id', user.id)
     .single()
 
-  if (profile?.role === 'owner') {
+  if (profile?.role === 'owner' || profile?.role === 'admin') {
     redirect('/owner/dashboard')
   } else {
     redirect('/dashboard')

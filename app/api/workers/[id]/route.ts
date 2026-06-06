@@ -8,6 +8,7 @@ const schema = z.object({
   email: z.string().email().optional(),
   password: z.string().min(8).optional(),
   name: z.string().min(1).optional(),
+  title: z.string().optional(),
 })
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -26,10 +27,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const parsed = schema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const { email, password, ...profileUpdates } = parsed.data
+  const { email, password, title, ...profileUpdates } = parsed.data
+  const updates: Record<string, string | number | boolean | null> = { ...profileUpdates }
+  if (title !== undefined) updates.title = title.trim() || null
 
-  if (Object.keys(profileUpdates).length > 0) {
-    const { error } = await admin.from('profiles').update(profileUpdates).eq('id', id)
+  if (Object.keys(updates).length > 0) {
+    const { error } = await admin.from('profiles').update(updates).eq('id', id)
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 

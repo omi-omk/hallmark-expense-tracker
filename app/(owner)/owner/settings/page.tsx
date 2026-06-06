@@ -4,16 +4,24 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Trash2 } from 'lucide-react'
 import type { Category } from '@/types'
 import { PushNotificationSettings } from '@/components/settings/push-notification-settings'
+import type { DashboardChartOrder } from '@/lib/dashboard/settings'
 
 export default function SettingsPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [newCategory, setNewCategory] = useState('')
   const [alertEmail, setAlertEmail] = useState('')
+  const [showCategorySpend, setShowCategorySpend] = useState(true)
+  const [showEmployeeSpend, setShowEmployeeSpend] = useState(true)
+  const [showEmployeeCards, setShowEmployeeCards] = useState(true)
+  const [chartOrder, setChartOrder] = useState<DashboardChartOrder>('category_first')
   const [emailLoading, setEmailLoading] = useState(false)
+  const [dashboardLoading, setDashboardLoading] = useState(false)
   const [addLoading, setAddLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
@@ -30,6 +38,10 @@ export default function SettingsPage() {
     if (settingsRes.ok) {
       const s = await settingsRes.json()
       setAlertEmail(s.owner_alert_email ?? '')
+      setShowCategorySpend(s.dashboard_show_category_spend ?? true)
+      setShowEmployeeSpend(s.dashboard_show_employee_spend ?? true)
+      setShowEmployeeCards(s.dashboard_show_employee_cards ?? true)
+      setChartOrder(s.dashboard_chart_order === 'employee_first' ? 'employee_first' : 'category_first')
     } else {
       toast.error('Failed to load settings')
     }
@@ -104,6 +116,31 @@ export default function SettingsPage() {
     }
   }
 
+  async function saveDashboardSettings(e: React.FormEvent) {
+    e.preventDefault()
+    if (dashboardLoading) return
+    setDashboardLoading(true)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dashboard_show_category_spend: showCategorySpend,
+          dashboard_show_employee_spend: showEmployeeSpend,
+          dashboard_show_employee_cards: showEmployeeCards,
+          dashboard_chart_order: chartOrder,
+        }),
+      })
+      if (res.ok) {
+        toast.success('Dashboard settings saved')
+      } else {
+        toast.error('Failed to save dashboard settings')
+      }
+    } finally {
+      setDashboardLoading(false)
+    }
+  }
+
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold">Settings</h1>
@@ -126,6 +163,67 @@ export default function SettingsPage() {
           <p className="text-xs text-muted-foreground mt-2">
             Alerts are sent to this email when an employee&apos;s balance drops below their threshold.
           </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle>Dashboard</CardTitle></CardHeader>
+        <CardContent>
+          <form onSubmit={saveDashboardSettings} className="space-y-4">
+            <div className="grid gap-3">
+              {[
+                {
+                  id: 'category-spend',
+                  label: 'Show category spend chart',
+                  checked: showCategorySpend,
+                  onChange: setShowCategorySpend,
+                },
+                {
+                  id: 'employee-spend',
+                  label: 'Show employee-wise spend chart',
+                  checked: showEmployeeSpend,
+                  onChange: setShowEmployeeSpend,
+                },
+                {
+                  id: 'employee-cards',
+                  label: 'Show employee cards',
+                  checked: showEmployeeCards,
+                  onChange: setShowEmployeeCards,
+                },
+              ].map(option => (
+                <label key={option.id} htmlFor={option.id} className="flex items-center gap-3 text-sm">
+                  <input
+                    id={option.id}
+                    type="checkbox"
+                    checked={option.checked}
+                    onChange={e => option.onChange(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  <span>{option.label}</span>
+                </label>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Chart Order</Label>
+              <Select
+                value={chartOrder}
+                onValueChange={value => setChartOrder(value === 'employee_first' ? 'employee_first' : 'category_first')}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="category_first">Category chart first</SelectItem>
+                  <SelectItem value="employee_first">Employee chart first</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button type="submit" disabled={dashboardLoading}>
+              {dashboardLoading ? 'Saving...' : 'Save Dashboard'}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 

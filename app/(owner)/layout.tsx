@@ -14,7 +14,7 @@ export default async function OwnerLayout({ children }: { children: React.ReactN
     .eq('id', user.id)
     .single()
 
-  if (profile?.role !== 'owner') redirect('/dashboard')
+  if (profile?.role !== 'owner' && profile?.role !== 'admin') redirect('/dashboard')
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">

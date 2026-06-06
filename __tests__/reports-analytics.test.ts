@@ -1,4 +1,4 @@
-import { buildPieSlices, buildReportAnalytics } from '@/lib/reports/analytics'
+import { buildEmployeeSpend, buildPieSlices, buildReportAnalytics } from '@/lib/reports/analytics'
 
 describe('buildReportAnalytics', () => {
   it('groups only debit entries by category and ignores credits', () => {
@@ -71,5 +71,31 @@ describe('buildPieSlices', () => {
       tooltip: 'Fuel: ₹500',
     }))
     expect(slices[0].path).toContain('A 42 42 0 1 0')
+  })
+})
+
+describe('buildEmployeeSpend', () => {
+  it('groups debit spend by employee and ignores credits', () => {
+    const employeeSpend = buildEmployeeSpend([
+      { id: '1', type: 'debit', amount: 400, profiles: { name: 'Aayushi' } },
+      { id: '2', type: 'debit', amount: 100, profiles: { name: 'Omkar' } },
+      { id: '3', type: 'debit', amount: 250, profiles: { name: 'Aayushi' } },
+      { id: '4', type: 'credit', amount: 2000, profiles: { name: 'Omkar' } },
+    ])
+
+    expect(employeeSpend).toEqual([
+      { name: 'Aayushi', amount: 650, percent: 100 },
+      { name: 'Omkar', amount: 100, percent: 15 },
+    ])
+  })
+
+  it('uses Unknown Employee for debit entries without employee name', () => {
+    const employeeSpend = buildEmployeeSpend([
+      { id: '1', type: 'debit', amount: 75, profiles: null },
+    ])
+
+    expect(employeeSpend).toEqual([
+      { name: 'Unknown Employee', amount: 75, percent: 100 },
+    ])
   })
 })

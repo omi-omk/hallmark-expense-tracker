@@ -1,10 +1,18 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import type { ReactNode } from 'react'
 import { calculateBalance } from '@/lib/balance'
 import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
 import { WorkerCard } from '@/components/worker-card'
-import { buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
+import { normalizeDashboardSettings } from '@/lib/dashboard/settings'
+import { buildEmployeeSpend, buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
 import type { Profile, WorkerWithBalance } from '@/types'
+
+interface ChartSection {
+  key: string
+  order: number
+  node: ReactNode
+}
 
 export default async function OwnerDashboard() {
   const supabase = await createClient()
@@ -19,19 +27,34 @@ export default async function OwnerDashboard() {
     .eq('is_active', true)
     .order('name')
 
-  const { data: categoryExpenses } = await admin
-    .from('expenses')
-    .select('id, amount, categories(name)')
+  const [{ data: dashboardExpenses }, { data: settingsRow }] = await Promise.all([
+    admin
+      .from('expenses')
+      .select('id, amount, categories(name), profiles(name)'),
+    admin
+      .from('settings')
+      .select('*')
+      .eq('id', 1)
+      .maybeSingle(),
+  ])
 
-  const dashboardAnalytics = buildReportAnalytics(
-    ((categoryExpenses ?? []) as { id: string; amount: number; categories: { name?: string | null } | null }[])
-      .map((expense): ReportEntry => ({
-        id: expense.id,
-        type: 'debit',
-        amount: expense.amount,
-        categories: expense.categories,
-      }))
-  )
+  const settings = normalizeDashboardSettings(settingsRow)
+  const dashboardEntries = (
+    (dashboardExpenses ?? []) as {
+      id: string
+      amount: number
+      categories: { name?: string | null } | null
+      profiles: { name?: string | null } | null
+    }[]
+  ).map((expense): ReportEntry => ({
+    id: expense.id,
+    type: 'debit',
+    amount: expense.amount,
+    categories: expense.categories,
+    profiles: expense.profiles,
+  }))
+  const dashboardAnalytics = buildReportAnalytics(dashboardEntries)
+  const employeeSpend = buildEmployeeSpend(dashboardEntries)
 
   const workersWithBalance: WorkerWithBalance[] = await Promise.all(
     (workers as Profile[] ?? []).map(async (worker: Profile) => {
@@ -56,6 +79,37 @@ export default async function OwnerDashboard() {
     if (!aLow && bLow) return 1
     return 0
   })
+  const charts: ChartSection[] = []
+  if (settings.dashboard_show_category_spend) {
+    charts.push({
+      key: 'category',
+      order: settings.dashboard_chart_order === 'category_first' ? 0 : 1,
+      node: (
+        <CategorySpendPieChart
+          title="Overall Category Spend"
+          description="All employee debit expenses grouped by category."
+          categorySpend={dashboardAnalytics.categorySpend}
+          emptyMessage="No employee expenses to chart yet."
+        />
+      ),
+    })
+  }
+  if (settings.dashboard_show_employee_spend) {
+    charts.push({
+      key: 'employee',
+      order: settings.dashboard_chart_order === 'employee_first' ? 0 : 1,
+      node: (
+        <CategorySpendPieChart
+          title="Employee Wise Spend"
+          description="Debit expenses grouped by employee."
+          categorySpend={employeeSpend}
+          emptyMessage="No employee expenses to chart yet."
+        />
+      ),
+    })
+  }
+  charts.sort((a, b) => a.order - b.order)
+  const hasVisibleDashboardSection = charts.length > 0 || settings.dashboard_show_employee_cards
 
   return (
     <div className="space-y-6">
@@ -68,22 +122,21 @@ export default async function OwnerDashboard() {
         )}
       </div>
 
-      <CategorySpendPieChart
-        title="Overall Category Spend"
-        description="All employee debit expenses grouped by category."
-        categorySpend={dashboardAnalytics.categorySpend}
-        emptyMessage="No employee expenses to chart yet."
-      />
+      {charts.map(chart => (
+        <div key={chart.key}>{chart.node}</div>
+      ))}
 
-      {sorted.length === 0 ? (
+      {!hasVisibleDashboardSection ? (
+        <p className="text-muted-foreground">All dashboard sections are hidden. Enable sections from Settings.</p>
+      ) : settings.dashboard_show_employee_cards && sorted.length === 0 ? (
         <p className="text-muted-foreground">No employees yet. Add employees from the Employees page.</p>
-      ) : (
+      ) : settings.dashboard_show_employee_cards ? (
         <div className="space-y-3">
           {sorted.map(worker => (
             <WorkerCard key={worker.id} worker={worker} />
           ))}
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

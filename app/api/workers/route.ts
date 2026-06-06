@@ -5,6 +5,7 @@ import { Resend } from 'resend'
 
 const createWorkerSchema = z.object({
   name: z.string().min(1),
+  title: z.string().optional(),
   email: z.string().email(),
   password: z.string().min(8),
   low_balance_threshold: z.number().int().nonnegative().default(500),
@@ -38,7 +39,8 @@ export async function POST(request: Request) {
   const parsed = createWorkerSchema.safeParse(body)
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
 
-  const { name, email, password, low_balance_threshold } = parsed.data
+  const { name, title, email, password, low_balance_threshold } = parsed.data
+  const profileTitle = title?.trim() || null
 
   const { data: authUser, error: authError } = await admin.auth.admin.createUser({
     email,
@@ -50,6 +52,7 @@ export async function POST(request: Request) {
   const { error: profileError } = await admin.from('profiles').insert({
     id: authUser.user.id,
     name,
+    title: profileTitle,
     email,
     role: 'worker',
     low_balance_threshold,

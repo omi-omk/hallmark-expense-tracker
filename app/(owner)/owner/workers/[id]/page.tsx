@@ -44,6 +44,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold">{worker.name}</h1>
+          {worker.title && <p className="text-muted-foreground">{worker.title}</p>}
           <p className="text-muted-foreground">{worker.email}</p>
         </div>
         <FundForm workerId={worker.id} />
@@ -59,7 +60,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
         </CardContent>
       </Card>
 
-      <ResetCredentialsForm workerId={worker.id} currentName={worker.name} />
+      <ResetCredentialsForm workerId={worker.id} currentName={worker.name} currentTitle={worker.title} />
 
       <CategorySpendPieChart
         title="Employee Category Spend"

@@ -8,14 +8,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 
-export function ResetCredentialsForm({ workerId, currentName }: { workerId: string; currentName: string }) {
+export function ResetCredentialsForm({
+  workerId,
+  currentName,
+  currentTitle,
+}: {
+  workerId: string
+  currentName: string
+  currentTitle?: string | null
+}) {
   const [name, setName] = useState(currentName)
+  const [title, setTitle] = useState(currentTitle ?? '')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  const hasChanges = name !== currentName || !!email || !!password
+  const hasChanges = name !== currentName || title !== (currentTitle ?? '') || !!email || !!password
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
@@ -25,6 +34,7 @@ export function ResetCredentialsForm({ workerId, currentName }: { workerId: stri
 
     const body: Record<string, string> = {}
     if (name !== currentName) body.name = name
+    if (title !== (currentTitle ?? '')) body.title = title
     if (email) body.email = email
     if (password) body.password = password
 
@@ -56,6 +66,10 @@ export function ResetCredentialsForm({ workerId, currentName }: { workerId: stri
           <div className="space-y-1">
             <Label className="text-sm">Name</Label>
             <Input value={name} onChange={e => setName(e.target.value)} placeholder="Employee name" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-sm">Title (optional)</Label>
+            <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Site Supervisor" />
           </div>
           <div className="space-y-1">
             <Label className="text-sm">New Email (optional)</Label>
