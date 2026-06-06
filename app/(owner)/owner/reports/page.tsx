@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
+import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
 import { toast } from 'sonner'
 import { buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
 import type { Category, Profile } from '@/types'
@@ -161,34 +162,12 @@ export default function ReportsPage() {
             </Card>
           </div>
 
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              <div>
-                <h2 className="font-semibold">Category Spend</h2>
-                <p className="text-xs text-muted-foreground">Debit entries only. Credits are excluded from this chart.</p>
-              </div>
-              {analytics.categorySpend.length > 0 ? (
-                <div className="space-y-3">
-                  {analytics.categorySpend.map(category => (
-                    <div key={category.name} className="space-y-1">
-                      <div className="flex items-center justify-between gap-3 text-sm">
-                        <span className="truncate font-medium">{category.name}</span>
-                        <span className="shrink-0 text-muted-foreground">₹{category.amount.toLocaleString('en-IN')}</span>
-                      </div>
-                      <div className="h-2 rounded-full bg-muted">
-                        <div
-                          className="h-2 rounded-full bg-primary"
-                          style={{ width: `${category.percent}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No category spend to chart for these filters.</p>
-              )}
-            </CardContent>
-          </Card>
+          <CategorySpendPieChart
+            title="Category Spend"
+            description="Debit entries only. Credits are excluded from this chart."
+            categorySpend={analytics.categorySpend}
+            emptyMessage="No category spend to chart for these filters."
+          />
 
           <div className="overflow-auto rounded-md border">
             <table className="w-full text-sm">

@@ -4,7 +4,9 @@ import { calculateBalance } from '@/lib/balance'
 import { FundForm } from '@/components/fund-form'
 import { ResetCredentialsForm } from '@/components/reset-credentials-form'
 import { ThresholdForm } from '@/components/threshold-form'
+import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
 import type { ExpenseWithCategory, FundTransfer } from '@/types'
 
 export default async function WorkerDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +30,14 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
   const expenses = (expensesRes.data ?? []) as ExpenseWithCategory[]
   const balance = calculateBalance(transfers, expenses)
   const isLow = balance < worker.low_balance_threshold
+  const employeeAnalytics = buildReportAnalytics(
+    expenses.map((expense): ReportEntry => ({
+      id: expense.id,
+      type: 'debit',
+      amount: expense.amount,
+      categories: expense.categories,
+    }))
+  )
 
   return (
     <div className="space-y-6">
@@ -50,6 +60,13 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
       </Card>
 
       <ResetCredentialsForm workerId={worker.id} currentName={worker.name} />
+
+      <CategorySpendPieChart
+        title="Employee Category Spend"
+        description="This employee's debit expenses grouped by category."
+        categorySpend={employeeAnalytics.categorySpend}
+        emptyMessage="No expenses to chart for this employee yet."
+      />
 
       <Card>
         <CardHeader><CardTitle>Transactions</CardTitle></CardHeader>

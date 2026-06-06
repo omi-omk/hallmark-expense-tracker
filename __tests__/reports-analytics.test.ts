@@ -1,4 +1,4 @@
-import { buildReportAnalytics } from '@/lib/reports/analytics'
+import { buildPieSlices, buildReportAnalytics } from '@/lib/reports/analytics'
 
 describe('buildReportAnalytics', () => {
   it('groups only debit entries by category and ignores credits', () => {
@@ -27,5 +27,49 @@ describe('buildReportAnalytics', () => {
     expect(analytics.categorySpend).toEqual([
       { name: 'Uncategorized', amount: 75, percent: 100 },
     ])
+  })
+})
+
+describe('buildPieSlices', () => {
+  it('turns category spend into svg pie slices with hover labels', () => {
+    const slices = buildPieSlices([
+      { name: 'Food', amount: 300, percent: 100 },
+      { name: 'Travel', amount: 100, percent: 33 },
+    ])
+
+    expect(slices).toHaveLength(2)
+    expect(slices[0]).toEqual(
+      expect.objectContaining({
+        name: 'Food',
+        amount: 300,
+        percentage: 75,
+        tooltip: 'Food: ₹300',
+      })
+    )
+    expect(slices[0].path).toMatch(/^M 50 50 L /)
+    expect(slices[1]).toEqual(
+      expect.objectContaining({
+        name: 'Travel',
+        amount: 100,
+        percentage: 25,
+        tooltip: 'Travel: ₹100',
+      })
+    )
+  })
+
+  it('returns no slices when there is no category spend', () => {
+    expect(buildPieSlices([])).toEqual([])
+  })
+
+  it('renders a full pie when all spend is in one category', () => {
+    const slices = buildPieSlices([{ name: 'Fuel', amount: 500, percent: 100 }])
+
+    expect(slices).toHaveLength(1)
+    expect(slices[0]).toEqual(expect.objectContaining({
+      name: 'Fuel',
+      percentage: 100,
+      tooltip: 'Fuel: ₹500',
+    }))
+    expect(slices[0].path).toContain('A 42 42 0 1 0')
   })
 })

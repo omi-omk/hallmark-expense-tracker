@@ -1,7 +1,9 @@
 import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { calculateBalance } from '@/lib/balance'
+import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
 import { WorkerCard } from '@/components/worker-card'
+import { buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
 import type { Profile, WorkerWithBalance } from '@/types'
 
 export default async function OwnerDashboard() {
@@ -16,6 +18,20 @@ export default async function OwnerDashboard() {
     .eq('role', 'worker')
     .eq('is_active', true)
     .order('name')
+
+  const { data: categoryExpenses } = await admin
+    .from('expenses')
+    .select('id, amount, categories(name)')
+
+  const dashboardAnalytics = buildReportAnalytics(
+    ((categoryExpenses ?? []) as { id: string; amount: number; categories: { name?: string | null } | null }[])
+      .map((expense): ReportEntry => ({
+        id: expense.id,
+        type: 'debit',
+        amount: expense.amount,
+        categories: expense.categories,
+      }))
+  )
 
   const workersWithBalance: WorkerWithBalance[] = await Promise.all(
     (workers as Profile[] ?? []).map(async (worker: Profile) => {
@@ -51,6 +67,13 @@ export default async function OwnerDashboard() {
           </div>
         )}
       </div>
+
+      <CategorySpendPieChart
+        title="Overall Category Spend"
+        description="All employee debit expenses grouped by category."
+        categorySpend={dashboardAnalytics.categorySpend}
+        emptyMessage="No employee expenses to chart yet."
+      />
 
       {sorted.length === 0 ? (
         <p className="text-muted-foreground">No employees yet. Add employees from the Employees page.</p>
