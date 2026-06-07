@@ -7,6 +7,7 @@ import { FundForm } from '@/components/fund-form'
 import { ResetCredentialsForm } from '@/components/reset-credentials-form'
 import { ThresholdForm } from '@/components/threshold-form'
 import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
+import { DeleteEmployeeActions } from '@/components/delete-employee-actions'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
 import { ownerExpenseDetailUrl } from '@/lib/transactions/urls'
@@ -64,6 +65,7 @@ export default async function WorkerDetailPage({ params }: { params: Promise<{ i
       </Card>
 
       <ResetCredentialsForm workerId={worker.id} currentName={worker.name} currentTitle={worker.title} />
+      <DeleteEmployeeActions workerId={worker.id} workerName={worker.name} isActive={worker.is_active} />
 
       <CategorySpendPieChart
         title="Employee Category Spend"

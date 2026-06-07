@@ -40,7 +40,7 @@ export default function LoginPage() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-2xl text-center">Expense Tracker</CardTitle>
+        <CardTitle className="text-2xl text-center">Expense</CardTitle>
         <p className="text-sm text-muted-foreground text-center">Sign in to your account</p>
       </CardHeader>
       <CardContent>

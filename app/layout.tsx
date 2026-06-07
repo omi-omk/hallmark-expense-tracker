@@ -7,12 +7,12 @@ import { ServiceWorkerRegistration } from '@/components/sw-register'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Hallmark Expense Tracker',
+  title: 'Expense',
   description: 'Track employee expenses',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    title: 'Hallmark Expenses',
+    title: 'Expense',
     statusBarStyle: 'default',
   },
 }

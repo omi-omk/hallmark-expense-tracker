@@ -169,7 +169,40 @@ export default function ReportsPage() {
             emptyMessage="No category spend to chart for these filters."
           />
 
-          <div className="overflow-auto rounded-md border">
+          <div className="space-y-3 md:hidden">
+            {expenses.map(e => (
+              <Card key={e.id}>
+                <CardContent className="space-y-3 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{e.profiles?.name ?? '—'}</p>
+                      <p className="text-xs text-muted-foreground">{e.date}</p>
+                    </div>
+                    <span className={e.type === 'credit' ? 'shrink-0 text-sm font-medium text-green-600' : 'shrink-0 text-sm font-medium text-red-600'}>
+                      {e.type === 'credit' ? 'Credit' : 'Debit'}
+                    </span>
+                  </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">Category</span>
+                      <span className="min-w-0 truncate text-right">{e.categories?.name ?? '—'}</span>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <span className="text-muted-foreground">Amount</span>
+                      <span className={e.type === 'credit' ? 'font-medium text-green-600' : 'font-medium text-red-600'}>
+                        {e.type === 'credit' ? '+' : '-'}₹{e.amount.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+                  {(e.comment || e.note) && (
+                    <p className="break-words text-sm text-muted-foreground">{e.comment ?? e.note}</p>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="hidden overflow-auto rounded-md border md:block">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
                 <tr className="border-b text-left">

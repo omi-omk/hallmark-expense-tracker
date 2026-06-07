@@ -1,7 +1,7 @@
 {
   "id": "/",
-  "name": "Hallmark Expense Tracker",
-  "short_name": "Hallmark Expenses",
+  "name": "Expense",
+  "short_name": "Expense",
   "description": "Employee expense tracking for Hallmark",
   "start_url": "/",
   "display": "standalone",

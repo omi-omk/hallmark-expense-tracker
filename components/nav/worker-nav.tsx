@@ -47,6 +47,7 @@ export function WorkerNav() {
           )
         })}
         <button
+          type="button"
           onClick={handleLogout}
           aria-label="Logout"
           title="Logout"
