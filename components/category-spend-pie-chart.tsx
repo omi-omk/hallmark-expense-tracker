@@ -13,6 +13,7 @@ interface CategorySpendPieChartProps {
   emptyMessage?: string
   filterKind?: 'category' | 'employee'
   baseHref?: string
+  getSliceHref?: (id: string) => string
 }
 
 export function CategorySpendPieChart({
@@ -22,6 +23,7 @@ export function CategorySpendPieChart({
   emptyMessage = 'No category spend to chart yet.',
   filterKind,
   baseHref = '/owner/reports',
+  getSliceHref,
 }: CategorySpendPieChartProps) {
   const slices = useMemo(() => buildPieSlices(categorySpend), [categorySpend])
   const total = categorySpend.reduce((sum, category) => sum + category.amount, 0)
@@ -47,7 +49,7 @@ export function CategorySpendPieChart({
                     key={slice.name}
                     slice={slice}
                     active={activeSlice?.name === slice.name}
-                    href={buildFilterHref(baseHref, filterKind, slice.id)}
+                    href={buildFilterHref(baseHref, filterKind, slice.id, getSliceHref)}
                     onFocus={() => setActiveName(slice.name)}
                     onMouseEnter={() => setActiveName(slice.name)}
                   />
@@ -61,7 +63,7 @@ export function CategorySpendPieChart({
               <>
                 <svg viewBox="0 0 100 100" role="img" aria-label={`${title}: ₹${total.toLocaleString('en-IN')} total spend`} className="h-44 w-44 overflow-visible">
                   {slices.map(slice => {
-                    const href = buildFilterHref(baseHref, filterKind, slice.id)
+                    const href = buildFilterHref(baseHref, filterKind, slice.id, getSliceHref)
                     const isActive = activeSlice.name === slice.name
                     const path = (
                       <path
@@ -168,8 +170,15 @@ function LegendRow({ slice, active, href, onFocus, onMouseEnter }: LegendRowProp
   )
 }
 
-function buildFilterHref(baseHref: string, filterKind?: 'category' | 'employee', id?: string | null): string | null {
-  if (!filterKind || !id) return null
+function buildFilterHref(
+  baseHref: string,
+  filterKind?: 'category' | 'employee',
+  id?: string | null,
+  getSliceHref?: (id: string) => string
+): string | null {
+  if (!id) return null
+  if (getSliceHref) return getSliceHref(id)
+  if (!filterKind) return null
   const param = filterKind === 'category' ? 'category_id' : 'worker_id'
   return `${baseHref}?${param}=${encodeURIComponent(id)}`
 }

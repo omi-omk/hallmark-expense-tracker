@@ -5,11 +5,18 @@ import { useSearchParams } from 'next/navigation'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { Card, CardContent } from '@/components/ui/card'
 import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
 import { toast } from 'sonner'
 import { buildEmployeeSpend, buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
+import {
+  buildReportFilterHref,
+  getReportChartVisibility,
+  paramsFromReportFilters,
+  reportFilterLabel,
+  type ReportFilters,
+} from '@/lib/reports/filters'
 import { withAppLoading } from '@/lib/loading/app-loading-events'
 import type { Category, Profile } from '@/types'
 
@@ -44,7 +51,7 @@ export default function ReportsPage() {
     loadingRef.current = true
     setLoading(true)
     try {
-      const params = paramsFromFilters(reportFilters)
+      const params = paramsFromReportFilters(reportFilters)
       const res = await withAppLoading(() => fetch(`/api/reports?${params}`))
       if (res.ok) {
         const data = await res.json()
@@ -82,12 +89,13 @@ export default function ReportsPage() {
   }
 
   function exportUrl(format: 'csv' | 'pdf') {
-    const params = paramsFromFilters(filters)
+    const params = paramsFromReportFilters(filters)
     return `/api/reports/${format}?${params}`
   }
 
   const analytics = buildReportAnalytics(expenses)
   const employeeSpend = buildEmployeeSpend(expenses)
+  const { showCategoryChart, showEmployeeChart } = getReportChartVisibility(filters)
 
   return (
     <div className="space-y-6">
@@ -99,7 +107,11 @@ export default function ReportsPage() {
             <div className="space-y-1">
               <Label>Employee</Label>
               <Select value={filters.worker_id || 'all'} onValueChange={(v: string | null) => updateFilter('worker_id', v && v !== 'all' ? v : '')}>
-                <SelectTrigger><SelectValue placeholder="All employees" /></SelectTrigger>
+                <SelectTrigger>
+                  <span data-slot="select-value" className="flex min-w-0 flex-1 truncate text-left">
+                    {reportFilterLabel(filters.worker_id, workers, 'All employees')}
+                  </span>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All employees</SelectItem>
                   {workers.map(w => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
@@ -109,7 +121,11 @@ export default function ReportsPage() {
             <div className="space-y-1">
               <Label>Category</Label>
               <Select value={filters.category_id || 'all'} onValueChange={(v: string | null) => updateFilter('category_id', v && v !== 'all' ? v : '')}>
-                <SelectTrigger><SelectValue placeholder="All categories" /></SelectTrigger>
+                <SelectTrigger>
+                  <span data-slot="select-value" className="flex min-w-0 flex-1 truncate text-left">
+                    {reportFilterLabel(filters.category_id, categories, 'All categories')}
+                  </span>
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All categories</SelectItem>
                   {categories.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -182,22 +198,30 @@ export default function ReportsPage() {
             </Card>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
-            <CategorySpendPieChart
-              title="Category Spend"
-              description="Debit entries only. Credits are excluded from this chart."
-              categorySpend={analytics.categorySpend}
-              emptyMessage="No category spend to chart for these filters."
-              filterKind="category"
-            />
-            <CategorySpendPieChart
-              title="Employee Wise Spend"
-              description="Debit entries grouped by employee."
-              categorySpend={employeeSpend}
-              emptyMessage="No employee spend to chart for these filters."
-              filterKind="employee"
-            />
-          </div>
+          {(showCategoryChart || showEmployeeChart) && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              {showCategoryChart && (
+                <CategorySpendPieChart
+                  title="Category Spend"
+                  description="Debit entries only. Credits are excluded from this chart."
+                  categorySpend={analytics.categorySpend}
+                  emptyMessage="No category spend to chart for these filters."
+                  filterKind="category"
+                  getSliceHref={id => buildReportFilterHref(filters, 'category_id', id)}
+                />
+              )}
+              {showEmployeeChart && (
+                <CategorySpendPieChart
+                  title="Employee Wise Spend"
+                  description="Debit entries grouped by employee."
+                  categorySpend={employeeSpend}
+                  emptyMessage="No employee spend to chart for these filters."
+                  filterKind="employee"
+                  getSliceHref={id => buildReportFilterHref(filters, 'worker_id', id)}
+                />
+              )}
+            </div>
+          )}
 
           <div className="space-y-3 md:hidden">
             {expenses.map(e => (
@@ -272,13 +296,6 @@ export default function ReportsPage() {
   )
 }
 
-type ReportFilters = {
-  worker_id: string
-  category_id: string
-  from: string
-  to: string
-}
-
 function filtersFromSearchParams(searchParams: URLSearchParams): ReportFilters {
   return {
     worker_id: searchParams.get('worker_id') ?? '',
@@ -290,10 +307,4 @@ function filtersFromSearchParams(searchParams: URLSearchParams): ReportFilters {
 
 function filtersFromSearchKey(searchKey: string): ReportFilters {
   return filtersFromSearchParams(new URLSearchParams(searchKey))
-}
-
-function paramsFromFilters(filters: ReportFilters) {
-  return new URLSearchParams(
-    Object.entries(filters).filter(([, v]) => v) as [string, string][]
-  )
 }
