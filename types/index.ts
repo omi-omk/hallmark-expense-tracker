@@ -52,5 +52,17 @@ export interface WorkerWithBalance extends Profile {
 }
 
 export interface ExpenseWithCategory extends Expense {
-  categories: { name: string }
+  categories: { id?: string | null; name: string }
+}
+
+export interface ExpenseActivityLog {
+  id: string
+  expense_id: string | null
+  worker_id: string
+  actor_id: string | null
+  actor_role: Role
+  action: 'created' | 'edited' | 'deleted'
+  old_values: unknown
+  new_values: unknown
+  created_at: string
 }

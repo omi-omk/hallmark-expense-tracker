@@ -1,7 +1,7 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { ExpenseDetailView } from '@/components/expense-detail-view'
-import type { ExpenseWithCategory } from '@/types'
+import type { Category, ExpenseActivityLog, ExpenseWithCategory } from '@/types'
 
 export default async function EmployeeExpenseDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -10,20 +10,36 @@ export default async function EmployeeExpenseDetailPage({ params }: { params: Pr
   if (!user) redirect('/login')
 
   const admin = createAdminClient()
-  const { data } = await admin
-    .from('expenses')
-    .select('*, categories(name)')
-    .eq('id', id)
-    .eq('worker_id', user.id)
-    .single()
+  const [expenseRes, categoriesRes, activityRes] = await Promise.all([
+    admin
+      .from('expenses')
+      .select('*, categories(id, name)')
+      .eq('id', id)
+      .eq('worker_id', user.id)
+      .single(),
+    admin
+      .from('categories')
+      .select('*')
+      .eq('is_global', true)
+      .order('name'),
+    admin
+      .from('expense_activity_logs')
+      .select('*')
+      .eq('expense_id', id)
+      .order('created_at', { ascending: false }),
+  ])
 
-  if (!data) notFound()
+  if (!expenseRes.data) notFound()
 
   return (
     <ExpenseDetailView
-      expense={data as ExpenseWithCategory}
+      expense={expenseRes.data as ExpenseWithCategory}
       backHref="/expenses"
       backLabel="Transactions"
+      categories={(categoriesRes.data ?? []) as Category[]}
+      canManage
+      deleteRedirectHref="/expenses"
+      activityLogs={(activityRes.data ?? []) as ExpenseActivityLog[]}
     />
   )
 }

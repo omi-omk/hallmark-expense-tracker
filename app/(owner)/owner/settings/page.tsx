@@ -11,6 +11,7 @@ import { Trash2 } from 'lucide-react'
 import type { Category } from '@/types'
 import { PushNotificationSettings } from '@/components/settings/push-notification-settings'
 import { AdminManagement } from '@/components/settings/admin-management'
+import { ExpenseActivityLogCard } from '@/components/settings/expense-activity-log'
 import type { DashboardChartOrder } from '@/lib/dashboard/settings'
 import { chartOrderLabel } from '@/lib/dashboard/chart-order-label'
 import { createSubmitLock } from '@/lib/forms/submit-lock'
@@ -246,6 +247,8 @@ export default function SettingsPage() {
       <PushNotificationSettings />
 
       <AdminManagement />
+
+      <ExpenseActivityLogCard />
 
       <Card>
         <CardHeader><CardTitle>Global Categories</CardTitle></CardHeader>

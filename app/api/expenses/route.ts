@@ -2,6 +2,7 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { checkAndNotifyLowBalance } from '@/lib/notifications'
 import { calculateBalance, isLowBalance } from '@/lib/balance'
+import { buildExpenseSnapshot } from '@/lib/expenses/activity-log'
 import { z } from 'zod'
 
 const schema = z.object({
@@ -28,9 +29,19 @@ export async function POST(request: Request) {
   const { data: expense, error } = await admin.from('expenses').insert({
     worker_id: user.id,
     ...parsed.data,
-  }).select().single()
+  }).select('*, categories(name)').single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  await admin.from('expense_activity_logs').insert({
+    expense_id: expense.id,
+    worker_id: user.id,
+    actor_id: user.id,
+    actor_role: 'worker',
+    action: 'created',
+    old_values: null,
+    new_values: buildExpenseSnapshot(expense),
+  })
 
   // Check balance and notify if low
   const [transfersRes, expensesRes, profileRes, settingsRes] = await Promise.all([

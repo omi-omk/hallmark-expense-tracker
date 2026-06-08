@@ -1,7 +1,7 @@
 import { createAdminClient, createClient } from '@/lib/supabase/server'
 import { redirect, notFound } from 'next/navigation'
 import { ExpenseDetailView } from '@/components/expense-detail-view'
-import type { ExpenseWithCategory } from '@/types'
+import type { Category, ExpenseActivityLog, ExpenseWithCategory } from '@/types'
 
 interface OwnerExpenseRow extends ExpenseWithCategory {
   profiles?: {
@@ -17,15 +17,27 @@ export default async function OwnerExpenseDetailPage({ params }: { params: Promi
   if (!user) redirect('/login')
 
   const admin = createAdminClient()
-  const { data } = await admin
-    .from('expenses')
-    .select('*, categories(name), profiles(name, email)')
-    .eq('id', id)
-    .single()
+  const [expenseRes, categoriesRes, activityRes] = await Promise.all([
+    admin
+      .from('expenses')
+      .select('*, categories(id, name), profiles(name, email)')
+      .eq('id', id)
+      .single(),
+    admin
+      .from('categories')
+      .select('*')
+      .eq('is_global', true)
+      .order('name'),
+    admin
+      .from('expense_activity_logs')
+      .select('*')
+      .eq('expense_id', id)
+      .order('created_at', { ascending: false }),
+  ])
 
-  if (!data) notFound()
+  if (!expenseRes.data) notFound()
 
-  const expense = data as OwnerExpenseRow
+  const expense = expenseRes.data as OwnerExpenseRow
 
   return (
     <ExpenseDetailView
@@ -33,6 +45,10 @@ export default async function OwnerExpenseDetailPage({ params }: { params: Promi
       employee={expense.profiles}
       backHref={`/owner/workers/${expense.worker_id}`}
       backLabel="Employee"
+      categories={(categoriesRes.data ?? []) as Category[]}
+      canManage
+      deleteRedirectHref={`/owner/workers/${expense.worker_id}`}
+      activityLogs={(activityRes.data ?? []) as ExpenseActivityLog[]}
     />
   )
 }
