@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { Trash2 } from 'lucide-react'
 import type { Category } from '@/types'
 import { PushNotificationSettings } from '@/components/settings/push-notification-settings'
+import { AdminManagement } from '@/components/settings/admin-management'
 import type { DashboardChartOrder } from '@/lib/dashboard/settings'
 import { chartOrderLabel } from '@/lib/dashboard/chart-order-label'
 import { createSubmitLock } from '@/lib/forms/submit-lock'
@@ -243,6 +244,8 @@ export default function SettingsPage() {
       </Card>
 
       <PushNotificationSettings />
+
+      <AdminManagement />
 
       <Card>
         <CardHeader><CardTitle>Global Categories</CardTitle></CardHeader>
