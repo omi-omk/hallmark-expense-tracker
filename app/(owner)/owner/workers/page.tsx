@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { buttonVariants } from '@/components/ui/button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -10,22 +10,39 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner'
 import Link from 'next/link'
 import type { Profile } from '@/types'
+import { calculateEmployeeBalancesFromRows } from '@/lib/workers/balances'
+import { createSubmitLock } from '@/lib/forms/submit-lock'
+
+interface EmployeeBalanceReportRow {
+  worker_id?: string | null
+  type: 'credit' | 'debit'
+  amount: number
+}
 
 export default function WorkersPage() {
   const [workers, setWorkers] = useState<Profile[]>([])
+  const [balances, setBalances] = useState<Record<string, number>>({})
   const [fetching, setFetching] = useState(true)
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ name: '', title: '', email: '', password: '', low_balance_threshold: '500' })
   const [loading, setLoading] = useState(false)
+  const createLock = useRef(createSubmitLock())
 
   async function fetchWorkers() {
     setFetching(true)
-    const res = await fetch('/api/workers')
-    if (res.ok) {
-      const data = await res.json()
+    const [workersRes, reportsRes] = await Promise.all([
+      fetch('/api/workers'),
+      fetch('/api/reports'),
+    ])
+    if (workersRes.ok) {
+      const data = await workersRes.json()
       setWorkers(data)
     } else {
       toast.error('Failed to load employees')
+    }
+    if (reportsRes.ok) {
+      const data = (await reportsRes.json()) as EmployeeBalanceReportRow[]
+      setBalances(calculateEmployeeBalancesFromRows(data))
     }
     setFetching(false)
   }
@@ -36,7 +53,7 @@ export default function WorkersPage() {
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault()
-    if (loading) return
+    if (!createLock.current.acquire()) return
     setLoading(true)
     try {
       const res = await fetch('/api/workers', {
@@ -54,6 +71,7 @@ export default function WorkersPage() {
         fetchWorkers()
       }
     } finally {
+      createLock.current.release()
       setLoading(false)
     }
   }
@@ -102,15 +120,20 @@ export default function WorkersPage() {
           workers.map(worker => (
             <Link key={worker.id} href={`/owner/workers/${worker.id}`}>
               <Card className="cursor-pointer hover:bg-gray-50">
-                <CardContent className="py-4 flex justify-between items-center">
-                  <div>
-                    <p className="font-medium">{worker.name}</p>
+                <CardContent className="flex items-center justify-between gap-3 py-4">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium">{worker.name}</p>
                     {worker.title && <p className="text-sm text-muted-foreground">{worker.title}</p>}
-                    <p className="text-sm text-muted-foreground">{worker.email}</p>
+                    <p className="truncate text-sm text-muted-foreground">{worker.email}</p>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${worker.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                    {worker.is_active ? 'Active' : 'Inactive'}
-                  </span>
+                  <div className="shrink-0 text-right">
+                    <p className={(balances[worker.id] ?? 0) < worker.low_balance_threshold ? 'font-semibold text-red-600' : 'font-semibold'}>
+                      ₹{(balances[worker.id] ?? 0).toLocaleString('en-IN')}
+                    </p>
+                    <span className={`mt-1 inline-flex rounded-full px-2 py-1 text-xs ${worker.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                      {worker.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </div>
                 </CardContent>
               </Card>
             </Link>

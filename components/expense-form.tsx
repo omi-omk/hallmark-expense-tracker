@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 
 import { toast } from 'sonner'
 import type { Category } from '@/types'
+import { createSubmitLock } from '@/lib/forms/submit-lock'
 
 const schema = z.object({
   amount: z.number().int().positive('Amount must be greater than 0'),
@@ -29,6 +30,7 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
   const [image, setImage] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const submitLock = useRef(createSubmitLock())
   const router = useRouter()
 
   const today = new Date().toISOString().split('T')[0]
@@ -53,7 +55,6 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
   }
 
   async function onSubmit(data: FormData) {
-    if (submitted || uploading || isSubmitting) return
     let completed = false
     setSubmitted(true)
     setUploading(true)
@@ -68,6 +69,7 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
       if (!res.ok) {
         toast.error('Failed to save expense.')
         setSubmitted(false)
+        submitLock.current.release()
         return
       }
 
@@ -92,14 +94,25 @@ export function ExpenseForm({ categories }: ExpenseFormProps) {
       setUploading(false)
       if (!completed) {
         setSubmitted(false)
+        submitLock.current.release()
       }
     }
+  }
+
+  function handleInvalidSubmit() {
+    submitLock.current.release()
   }
 
   const submitting = isSubmitting || uploading || submitted
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+    <form
+      onSubmit={event => {
+        if (!submitLock.current.acquire()) return
+        void handleSubmit(onSubmit, handleInvalidSubmit)(event)
+      }}
+      className="space-y-5"
+    >
       <div className="space-y-2">
         <Label>Amount (₹)</Label>
         <Input type="number" min={1} placeholder="500" {...register('amount', { valueAsNumber: true })} />

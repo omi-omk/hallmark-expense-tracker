@@ -1,19 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
+import { createSubmitLock } from '@/lib/forms/submit-lock'
 
 export function ThresholdForm({ workerId, currentThreshold }: { workerId: string; currentThreshold: number }) {
   const [threshold, setThreshold] = useState(String(currentThreshold))
   const [loading, setLoading] = useState(false)
+  const submitLock = useRef(createSubmitLock())
   const router = useRouter()
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (loading) return
+    if (!submitLock.current.acquire()) return
     setLoading(true)
     try {
       const res = await fetch(`/api/workers/${workerId}`, {
@@ -28,6 +30,7 @@ export function ThresholdForm({ workerId, currentThreshold }: { workerId: string
         toast.error('Failed to update threshold')
       }
     } finally {
+      submitLock.current.release()
       setLoading(false)
     }
   }

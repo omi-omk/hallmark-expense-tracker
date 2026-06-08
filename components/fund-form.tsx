@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { buttonVariants } from '@/components/ui/button'
 import { toast } from 'sonner'
+import { createSubmitLock } from '@/lib/forms/submit-lock'
 
 interface FundFormProps {
   workerId: string
@@ -18,11 +19,12 @@ export function FundForm({ workerId }: FundFormProps) {
   const [amount, setAmount] = useState('')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
+  const submitLock = useRef(createSubmitLock())
   const router = useRouter()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (loading) return
+    if (!submitLock.current.acquire()) return
     setLoading(true)
 
     try {
@@ -42,6 +44,7 @@ export function FundForm({ workerId }: FundFormProps) {
         router.refresh()
       }
     } finally {
+      submitLock.current.release()
       setLoading(false)
     }
   }

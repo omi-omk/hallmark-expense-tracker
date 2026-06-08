@@ -1,16 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Trash2 } from 'lucide-react'
 import type { Category } from '@/types'
 import { PushNotificationSettings } from '@/components/settings/push-notification-settings'
 import type { DashboardChartOrder } from '@/lib/dashboard/settings'
+import { chartOrderLabel } from '@/lib/dashboard/chart-order-label'
+import { createSubmitLock } from '@/lib/forms/submit-lock'
 
 export default function SettingsPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -24,6 +26,10 @@ export default function SettingsPage() {
   const [dashboardLoading, setDashboardLoading] = useState(false)
   const [addLoading, setAddLoading] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const emailLock = useRef(createSubmitLock())
+  const dashboardLock = useRef(createSubmitLock())
+  const categoryLock = useRef(createSubmitLock())
+  const deleteCategoryLock = useRef(createSubmitLock())
 
   async function fetchData() {
     const [catRes, settingsRes] = await Promise.all([
@@ -53,8 +59,11 @@ export default function SettingsPage() {
 
   async function addCategory(e: React.FormEvent) {
     e.preventDefault()
-    if (addLoading) return
-    if (!newCategory.trim()) return
+    if (!categoryLock.current.acquire()) return
+    if (!newCategory.trim()) {
+      categoryLock.current.release()
+      return
+    }
     setAddLoading(true)
     try {
       const res = await fetch('/api/categories', {
@@ -71,12 +80,13 @@ export default function SettingsPage() {
         toast.error(err.error ?? 'Failed to add category')
       }
     } finally {
+      categoryLock.current.release()
       setAddLoading(false)
     }
   }
 
   async function deleteCategory(id: string) {
-    if (deletingId) return
+    if (!deleteCategoryLock.current.acquire()) return
     setDeletingId(id)
     try {
       const res = await fetch('/api/categories', {
@@ -92,13 +102,14 @@ export default function SettingsPage() {
         toast.error(err.error ?? 'Cannot delete category')
       }
     } finally {
+      deleteCategoryLock.current.release()
       setDeletingId(null)
     }
   }
 
   async function saveAlertEmail(e: React.FormEvent) {
     e.preventDefault()
-    if (emailLoading) return
+    if (!emailLock.current.acquire()) return
     setEmailLoading(true)
     try {
       const res = await fetch('/api/settings', {
@@ -112,13 +123,14 @@ export default function SettingsPage() {
         toast.error('Failed to save email')
       }
     } finally {
+      emailLock.current.release()
       setEmailLoading(false)
     }
   }
 
   async function saveDashboardSettings(e: React.FormEvent) {
     e.preventDefault()
-    if (dashboardLoading) return
+    if (!dashboardLock.current.acquire()) return
     setDashboardLoading(true)
     try {
       const res = await fetch('/api/settings', {
@@ -137,6 +149,7 @@ export default function SettingsPage() {
         toast.error('Failed to save dashboard settings')
       }
     } finally {
+      dashboardLock.current.release()
       setDashboardLoading(false)
     }
   }
@@ -211,7 +224,9 @@ export default function SettingsPage() {
                 onValueChange={value => setChartOrder(value === 'employee_first' ? 'employee_first' : 'category_first')}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <span data-slot="select-value" className="flex min-w-0 flex-1 truncate text-left">
+                    {chartOrderLabel(chartOrder)}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="category_first">Category chart first</SelectItem>

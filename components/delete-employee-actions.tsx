@@ -1,11 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Trash2, UserX } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { buildDeleteEmployeePayload, type DeleteEmployeeMode } from '@/lib/workers/delete-actions'
+import { createSubmitLock } from '@/lib/forms/submit-lock'
 
 interface DeleteEmployeeActionsProps {
   workerId: string
@@ -16,9 +17,10 @@ interface DeleteEmployeeActionsProps {
 export function DeleteEmployeeActions({ workerId, workerName, isActive }: DeleteEmployeeActionsProps) {
   const router = useRouter()
   const [pendingMode, setPendingMode] = useState<DeleteEmployeeMode | null>(null)
+  const submitLock = useRef(createSubmitLock())
 
   async function removeEmployee(mode: DeleteEmployeeMode) {
-    if (pendingMode) return
+    if (!submitLock.current.acquire()) return
 
     const confirmed =
       mode === 'soft'
@@ -27,7 +29,10 @@ export function DeleteEmployeeActions({ workerId, workerName, isActive }: Delete
             `Hard delete ${workerName}? This removes the employee account and linked data permanently. This cannot be undone.`
           )
 
-    if (!confirmed) return
+    if (!confirmed) {
+      submitLock.current.release()
+      return
+    }
 
     setPendingMode(mode)
     try {
@@ -48,6 +53,7 @@ export function DeleteEmployeeActions({ workerId, workerName, isActive }: Delete
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to remove employee')
     } finally {
+      submitLock.current.release()
       setPendingMode(null)
     }
   }

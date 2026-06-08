@@ -1,12 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { createSubmitLock } from '@/lib/forms/submit-lock'
 
 export function ResetCredentialsForm({
   workerId,
@@ -22,14 +23,18 @@ export function ResetCredentialsForm({
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const submitLock = useRef(createSubmitLock())
   const router = useRouter()
 
   const hasChanges = name !== currentName || title !== (currentTitle ?? '') || !!email || !!password
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
-    if (loading) return
-    if (!hasChanges) return
+    if (!submitLock.current.acquire()) return
+    if (!hasChanges) {
+      submitLock.current.release()
+      return
+    }
     setLoading(true)
 
     const body: Record<string, string> = {}
@@ -54,6 +59,7 @@ export function ResetCredentialsForm({
         toast.error('Failed to update employee')
       }
     } finally {
+      submitLock.current.release()
       setLoading(false)
     }
   }
