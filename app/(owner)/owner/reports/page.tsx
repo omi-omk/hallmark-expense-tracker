@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button, buttonVariants } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,38 +9,43 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card'
 import { CategorySpendPieChart } from '@/components/category-spend-pie-chart'
 import { toast } from 'sonner'
-import { buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
+import { buildEmployeeSpend, buildReportAnalytics, type ReportEntry } from '@/lib/reports/analytics'
+import { withAppLoading } from '@/lib/loading/app-loading-events'
 import type { Category, Profile } from '@/types'
 
 interface ReportRow extends ReportEntry {
   worker_id?: string
+  category_id?: string
   date?: string
   comment?: string
   note?: string
-  profiles?: { name?: string | null } | null
+  profiles?: { id?: string | null; name?: string | null } | null
+  categories?: { id?: string | null; name?: string | null } | null
 }
 
 export default function ReportsPage() {
+  const searchParams = useSearchParams()
+  const searchKey = searchParams.toString()
   const [workers, setWorkers] = useState<Profile[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [expenses, setExpenses] = useState<ReportRow[]>([])
-  const [filters, setFilters] = useState({ worker_id: '', category_id: '', from: '', to: '' })
+  const [filters, setFilters] = useState(() => filtersFromSearchParams(searchParams))
   const [loading, setLoading] = useState(false)
   const [hasRun, setHasRun] = useState(false)
+  const loadingRef = useRef(false)
 
   useEffect(() => {
     fetch('/api/workers').then(r => r.ok ? r.json() : []).then(setWorkers)
     fetch('/api/categories').then(r => r.ok ? r.json() : []).then(setCategories)
   }, [])
 
-  async function runReport() {
-    if (loading) return
+  const runReport = useCallback(async (reportFilters: ReportFilters) => {
+    if (loadingRef.current) return
+    loadingRef.current = true
     setLoading(true)
     try {
-      const params = new URLSearchParams(
-        Object.entries(filters).filter(([, v]) => v) as [string, string][]
-      )
-      const res = await fetch(`/api/reports?${params}`)
+      const params = paramsFromFilters(reportFilters)
+      const res = await withAppLoading(() => fetch(`/api/reports?${params}`))
       if (res.ok) {
         const data = await res.json()
         setExpenses(data)
@@ -50,9 +56,24 @@ export default function ReportsPage() {
     } catch {
       toast.error('Failed to load report')
     } finally {
+      loadingRef.current = false
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const nextFilters = filtersFromSearchKey(searchKey)
+    const hasUrlFilters = Object.values(nextFilters).some(Boolean)
+    const timer = window.setTimeout(() => {
+      setFilters(nextFilters)
+      setExpenses([])
+      setHasRun(false)
+      if (hasUrlFilters) {
+        void runReport(nextFilters)
+      }
+    }, 0)
+    return () => window.clearTimeout(timer)
+  }, [searchKey, runReport])
 
   function updateFilter(key: string, value: string) {
     setFilters(f => ({ ...f, [key]: value }))
@@ -61,13 +82,12 @@ export default function ReportsPage() {
   }
 
   function exportUrl(format: 'csv' | 'pdf') {
-    const params = new URLSearchParams(
-      Object.entries(filters).filter(([, v]) => v) as [string, string][]
-    )
+    const params = paramsFromFilters(filters)
     return `/api/reports/${format}?${params}`
   }
 
   const analytics = buildReportAnalytics(expenses)
+  const employeeSpend = buildEmployeeSpend(expenses)
 
   return (
     <div className="space-y-6">
@@ -78,7 +98,7 @@ export default function ReportsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1">
               <Label>Employee</Label>
-              <Select onValueChange={(v: string | null) => updateFilter('worker_id', v && v !== 'all' ? v : '')}>
+              <Select value={filters.worker_id || 'all'} onValueChange={(v: string | null) => updateFilter('worker_id', v && v !== 'all' ? v : '')}>
                 <SelectTrigger><SelectValue placeholder="All employees" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All employees</SelectItem>
@@ -88,7 +108,7 @@ export default function ReportsPage() {
             </div>
             <div className="space-y-1">
               <Label>Category</Label>
-              <Select onValueChange={(v: string | null) => updateFilter('category_id', v && v !== 'all' ? v : '')}>
+              <Select value={filters.category_id || 'all'} onValueChange={(v: string | null) => updateFilter('category_id', v && v !== 'all' ? v : '')}>
                 <SelectTrigger><SelectValue placeholder="All categories" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All categories</SelectItem>
@@ -98,14 +118,14 @@ export default function ReportsPage() {
             </div>
             <div className="space-y-1">
               <Label>From</Label>
-              <Input type="date" onChange={e => updateFilter('from', e.target.value)} />
+              <Input type="date" value={filters.from} onChange={e => updateFilter('from', e.target.value)} />
             </div>
             <div className="space-y-1">
               <Label>To</Label>
-              <Input type="date" onChange={e => updateFilter('to', e.target.value)} />
+              <Input type="date" value={filters.to} onChange={e => updateFilter('to', e.target.value)} />
             </div>
           </div>
-          <Button onClick={runReport} disabled={loading} className="w-full">
+          <Button onClick={() => runReport(filters)} disabled={loading} className="w-full">
             {loading ? 'Loading...' : 'Run Report'}
           </Button>
         </CardContent>
@@ -162,12 +182,22 @@ export default function ReportsPage() {
             </Card>
           </div>
 
-          <CategorySpendPieChart
-            title="Category Spend"
-            description="Debit entries only. Credits are excluded from this chart."
-            categorySpend={analytics.categorySpend}
-            emptyMessage="No category spend to chart for these filters."
-          />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <CategorySpendPieChart
+              title="Category Spend"
+              description="Debit entries only. Credits are excluded from this chart."
+              categorySpend={analytics.categorySpend}
+              emptyMessage="No category spend to chart for these filters."
+              filterKind="category"
+            />
+            <CategorySpendPieChart
+              title="Employee Wise Spend"
+              description="Debit entries grouped by employee."
+              categorySpend={employeeSpend}
+              emptyMessage="No employee spend to chart for these filters."
+              filterKind="employee"
+            />
+          </div>
 
           <div className="space-y-3 md:hidden">
             {expenses.map(e => (
@@ -239,5 +269,31 @@ export default function ReportsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+type ReportFilters = {
+  worker_id: string
+  category_id: string
+  from: string
+  to: string
+}
+
+function filtersFromSearchParams(searchParams: URLSearchParams): ReportFilters {
+  return {
+    worker_id: searchParams.get('worker_id') ?? '',
+    category_id: searchParams.get('category_id') ?? '',
+    from: searchParams.get('from') ?? '',
+    to: searchParams.get('to') ?? '',
+  }
+}
+
+function filtersFromSearchKey(searchKey: string): ReportFilters {
+  return filtersFromSearchParams(new URLSearchParams(searchKey))
+}
+
+function paramsFromFilters(filters: ReportFilters) {
+  return new URLSearchParams(
+    Object.entries(filters).filter(([, v]) => v) as [string, string][]
   )
 }

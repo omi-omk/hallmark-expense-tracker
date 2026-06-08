@@ -1,8 +1,11 @@
+'use client'
+
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { AlertTriangle, ChevronRight } from 'lucide-react'
 import type { WorkerWithBalance } from '@/types'
+import { startAppLoading } from '@/lib/loading/app-loading-events'
 
 interface WorkerCardProps {
   worker: WorkerWithBalance
@@ -12,7 +15,7 @@ export function WorkerCard({ worker }: WorkerCardProps) {
   const isLow = worker.balance < worker.low_balance_threshold
 
   return (
-    <Link href={`/owner/workers/${worker.id}`}>
+    <Link href={`/owner/workers/${worker.id}`} onClick={startAppLoading}>
       <Card className={`cursor-pointer hover:bg-gray-50 ${isLow ? 'border-red-300' : ''}`}>
         <CardContent className="py-4 flex justify-between items-center">
           <div className="flex items-center gap-3">

@@ -4,11 +4,14 @@ export interface ReportEntry {
   id: string
   type: ReportEntryType
   amount: number
-  categories?: { name?: string | null } | null
-  profiles?: { name?: string | null } | null
+  worker_id?: string | null
+  category_id?: string | null
+  categories?: { id?: string | null; name?: string | null } | null
+  profiles?: { id?: string | null; name?: string | null } | null
 }
 
 export interface CategorySpend {
+  id?: string | null
   name: string
   amount: number
   percent: number
@@ -25,6 +28,7 @@ export interface ReportAnalytics {
 }
 
 export interface PieSlice {
+  id?: string | null
   name: string
   amount: number
   percentage: number
@@ -52,15 +56,24 @@ export function buildReportAnalytics(entries: ReportEntry[]): ReportAnalytics {
   const debitEntries = entries.filter(entry => entry.type === 'debit')
   const totalDebits = debitEntries.reduce((sum, entry) => sum + entry.amount, 0)
 
-  const grouped = new Map<string, number>()
+  const grouped = new Map<string, { id: string | null; name: string; amount: number }>()
   for (const entry of debitEntries) {
     const name = entry.categories?.name?.trim() || 'Uncategorized'
-    grouped.set(name, (grouped.get(name) ?? 0) + entry.amount)
+    const id = entry.categories?.id ?? entry.category_id ?? null
+    const key = id ?? `name:${name}`
+    const current = grouped.get(key)
+    grouped.set(key, {
+      id,
+      name,
+      amount: (current?.amount ?? 0) + entry.amount,
+    })
   }
 
-  const maxAmount = Math.max(...grouped.values(), 0)
-  const categorySpend = [...grouped.entries()]
-    .map(([name, amount]) => ({
+  const groupedValues = [...grouped.values()]
+  const maxAmount = Math.max(...groupedValues.map(item => item.amount), 0)
+  const categorySpend = groupedValues
+    .map(({ id, name, amount }) => ({
+      ...(id ? { id } : {}),
       name,
       amount,
       percent: maxAmount > 0 ? Math.round((amount / maxAmount) * 100) : 0,
@@ -89,6 +102,7 @@ export function buildPieSlices(categorySpend: CategorySpend[]): PieSlice[] {
     const percentage = Math.round((category.amount / total) * 100)
     const slice = {
       name: category.name,
+      ...(category.id ? { id: category.id } : {}),
       amount: category.amount,
       percentage,
       path,
@@ -102,16 +116,25 @@ export function buildPieSlices(categorySpend: CategorySpend[]): PieSlice[] {
 
 export function buildEmployeeSpend(entries: ReportEntry[]): EmployeeSpend[] {
   const debitEntries = entries.filter(entry => entry.type === 'debit')
-  const grouped = new Map<string, number>()
+  const grouped = new Map<string, { id: string | null; name: string; amount: number }>()
 
   for (const entry of debitEntries) {
     const name = entry.profiles?.name?.trim() || 'Unknown Employee'
-    grouped.set(name, (grouped.get(name) ?? 0) + entry.amount)
+    const id = entry.profiles?.id ?? entry.worker_id ?? null
+    const key = id ?? `name:${name}`
+    const current = grouped.get(key)
+    grouped.set(key, {
+      id,
+      name,
+      amount: (current?.amount ?? 0) + entry.amount,
+    })
   }
 
-  const maxAmount = Math.max(...grouped.values(), 0)
-  return [...grouped.entries()]
-    .map(([name, amount]) => ({
+  const groupedValues = [...grouped.values()]
+  const maxAmount = Math.max(...groupedValues.map(item => item.amount), 0)
+  return groupedValues
+    .map(({ id, name, amount }) => ({
+      ...(id ? { id } : {}),
       name,
       amount,
       percent: maxAmount > 0 ? Math.round((amount / maxAmount) * 100) : 0,

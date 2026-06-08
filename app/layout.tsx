@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
 import { ServiceWorkerRegistration } from '@/components/sw-register'
+import { AppLoadingOverlay } from '@/components/loading/app-loading-overlay'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className={inter.className}>
         {children}
+        <AppLoadingOverlay />
         <Toaster />
         <ServiceWorkerRegistration />
       </body>

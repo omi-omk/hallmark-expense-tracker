@@ -31,7 +31,7 @@ export default async function OwnerDashboard() {
   const [{ data: dashboardExpenses }, { data: settingsRow }] = await Promise.all([
     admin
       .from('expenses')
-      .select('id, amount, categories(name), profiles(name)'),
+      .select('id, amount, worker_id, category_id, categories(id, name), profiles(id, name)'),
     admin
       .from('settings')
       .select('*')
@@ -44,13 +44,17 @@ export default async function OwnerDashboard() {
     (dashboardExpenses ?? []) as {
       id: string
       amount: number
-      categories: { name?: string | null } | null
-      profiles: { name?: string | null } | null
+      worker_id?: string | null
+      category_id?: string | null
+      categories: { id?: string | null; name?: string | null } | null
+      profiles: { id?: string | null; name?: string | null } | null
     }[]
   ).map((expense): ReportEntry => ({
     id: expense.id,
     type: 'debit',
     amount: expense.amount,
+    worker_id: expense.worker_id,
+    category_id: expense.category_id,
     categories: expense.categories,
     profiles: expense.profiles,
   }))
@@ -94,6 +98,7 @@ export default async function OwnerDashboard() {
           description="All employee debit expenses grouped by category."
           categorySpend={dashboardAnalytics.categorySpend}
           emptyMessage="No employee expenses to chart yet."
+          filterKind="category"
         />
       ),
     })
@@ -108,6 +113,7 @@ export default async function OwnerDashboard() {
           description="Debit expenses grouped by employee."
           categorySpend={employeeSpend}
           emptyMessage="No employee expenses to chart yet."
+          filterKind="employee"
         />
       ),
     })

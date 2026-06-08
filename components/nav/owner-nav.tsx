@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { Users, BarChart3, Settings, LayoutDashboard, LogOut, Menu } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { startAppLoading, stopAppLoading } from '@/lib/loading/app-loading-events'
 
 const links = [
   { href: '/owner/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,6 +25,7 @@ export function OwnerNav() {
   async function handleLogout() {
     if (loggingOut) return
     setLoggingOut(true)
+    startAppLoading()
     try {
       await fetch('/api/auth/signout', { method: 'POST' })
       setMenuOpen(false)
@@ -31,6 +33,7 @@ export function OwnerNav() {
       router.refresh()
     } finally {
       setLoggingOut(false)
+      stopAppLoading()
     }
   }
 
@@ -60,7 +63,10 @@ export function OwnerNav() {
                 <Link
                   key={href}
                   href={href}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    if (href !== pathname) startAppLoading()
+                    setMenuOpen(false)
+                  }}
                   className={`flex h-11 items-center gap-3 rounded-lg px-3 text-sm ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-gray-100'}`}
                 >
                   <Icon className="h-5 w-5 shrink-0" />
@@ -91,6 +97,9 @@ export function OwnerNav() {
               href={href}
               aria-label={label}
               title={label}
+              onClick={() => {
+                if (href !== pathname) startAppLoading()
+              }}
               className={`flex h-10 shrink-0 items-center justify-center gap-2 rounded-lg px-3 text-xs md:w-full md:justify-start md:text-sm ${active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-gray-100'}`}
             >
               <Icon className="h-5 w-5 shrink-0" />

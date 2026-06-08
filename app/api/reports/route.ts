@@ -10,8 +10,8 @@ interface ExpenseReportRow {
   comment: string | null
   image_url?: string | null
   created_at: string
-  categories: { name: string } | null
-  profiles: { name: string } | null
+  categories: { id?: string | null; name: string } | null
+  profiles: { id?: string | null; name: string } | null
 }
 
 interface TransferReportRow {
@@ -20,7 +20,7 @@ interface TransferReportRow {
   amount: number
   note: string | null
   created_at: string
-  profiles: { name: string } | null
+  profiles: { id?: string | null; name: string } | null
 }
 
 export async function GET(request: Request) {
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
 
   let expenseQuery = admin
     .from('expenses')
-    .select('*, categories(name), profiles(name)')
+    .select('*, categories(id, name), profiles(id, name)')
     .order('date', { ascending: false })
   if (worker_id) expenseQuery = expenseQuery.eq('worker_id', worker_id)
   if (category_id) expenseQuery = expenseQuery.eq('category_id', category_id)
@@ -48,7 +48,7 @@ export async function GET(request: Request) {
 
   let transferQuery = admin
     .from('fund_transfers')
-    .select('*, profiles(name)')
+    .select('*, profiles(id, name)')
     .order('created_at', { ascending: false })
   if (worker_id) transferQuery = transferQuery.eq('worker_id', worker_id)
   if (from) transferQuery = transferQuery.gte('created_at', from)

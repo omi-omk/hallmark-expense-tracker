@@ -3,9 +3,9 @@ import { buildEmployeeSpend, buildPieSlices, buildReportAnalytics } from '@/lib/
 describe('buildReportAnalytics', () => {
   it('groups only debit entries by category and ignores credits', () => {
     const analytics = buildReportAnalytics([
-      { id: '1', type: 'debit', amount: 250, categories: { name: 'Food' } },
-      { id: '2', type: 'debit', amount: 150, categories: { name: 'Travel' } },
-      { id: '3', type: 'debit', amount: 50, categories: { name: 'Food' } },
+      { id: '1', type: 'debit', amount: 250, category_id: 'food-id', categories: { id: 'food-id', name: 'Food' } },
+      { id: '2', type: 'debit', amount: 150, category_id: 'travel-id', categories: { id: 'travel-id', name: 'Travel' } },
+      { id: '3', type: 'debit', amount: 50, category_id: 'food-id', categories: { id: 'food-id', name: 'Food' } },
       { id: '4', type: 'credit', amount: 1000, categories: { name: 'Funds' } },
     ])
 
@@ -14,8 +14,8 @@ describe('buildReportAnalytics', () => {
     expect(analytics.netMovement).toBe(550)
     expect(analytics.topCategory?.name).toBe('Food')
     expect(analytics.categorySpend).toEqual([
-      { name: 'Food', amount: 300, percent: 100 },
-      { name: 'Travel', amount: 150, percent: 50 },
+      { id: 'food-id', name: 'Food', amount: 300, percent: 100 },
+      { id: 'travel-id', name: 'Travel', amount: 150, percent: 50 },
     ])
   })
 
@@ -33,14 +33,15 @@ describe('buildReportAnalytics', () => {
 describe('buildPieSlices', () => {
   it('turns category spend into svg pie slices with hover labels', () => {
     const slices = buildPieSlices([
-      { name: 'Food', amount: 300, percent: 100 },
-      { name: 'Travel', amount: 100, percent: 33 },
+      { id: 'food-id', name: 'Food', amount: 300, percent: 100 },
+      { id: 'travel-id', name: 'Travel', amount: 100, percent: 33 },
     ])
 
     expect(slices).toHaveLength(2)
     expect(slices[0]).toEqual(
       expect.objectContaining({
         name: 'Food',
+        id: 'food-id',
         amount: 300,
         percentage: 75,
         tooltip: 'Food: ₹300',
@@ -50,6 +51,7 @@ describe('buildPieSlices', () => {
     expect(slices[1]).toEqual(
       expect.objectContaining({
         name: 'Travel',
+        id: 'travel-id',
         amount: 100,
         percentage: 25,
         tooltip: 'Travel: ₹100',
@@ -77,15 +79,15 @@ describe('buildPieSlices', () => {
 describe('buildEmployeeSpend', () => {
   it('groups debit spend by employee and ignores credits', () => {
     const employeeSpend = buildEmployeeSpend([
-      { id: '1', type: 'debit', amount: 400, profiles: { name: 'Aayushi' } },
-      { id: '2', type: 'debit', amount: 100, profiles: { name: 'Omkar' } },
-      { id: '3', type: 'debit', amount: 250, profiles: { name: 'Aayushi' } },
+      { id: '1', type: 'debit', amount: 400, worker_id: 'aayushi-id', profiles: { id: 'aayushi-id', name: 'Aayushi' } },
+      { id: '2', type: 'debit', amount: 100, worker_id: 'omkar-id', profiles: { id: 'omkar-id', name: 'Omkar' } },
+      { id: '3', type: 'debit', amount: 250, worker_id: 'aayushi-id', profiles: { id: 'aayushi-id', name: 'Aayushi' } },
       { id: '4', type: 'credit', amount: 2000, profiles: { name: 'Omkar' } },
     ])
 
     expect(employeeSpend).toEqual([
-      { name: 'Aayushi', amount: 650, percent: 100 },
-      { name: 'Omkar', amount: 100, percent: 15 },
+      { id: 'aayushi-id', name: 'Aayushi', amount: 650, percent: 100 },
+      { id: 'omkar-id', name: 'Omkar', amount: 100, percent: 15 },
     ])
   })
 
