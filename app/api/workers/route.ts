@@ -1,7 +1,7 @@
 import { createClient, createAdminClient, isOwner } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
-import { Resend } from 'resend'
+import { sendBrevoEmail } from '@/lib/email/brevo'
 
 const createWorkerSchema = z.object({
   name: z.string().min(1),
@@ -64,9 +64,7 @@ export async function POST(request: Request) {
 
   // Send welcome email with credentials
   try {
-    const resend = new Resend(process.env.RESEND_API_KEY)
-    await resend.emails.send({
-      from: 'onboarding@resend.dev',
+    await sendBrevoEmail({
       to: email,
       subject: 'Your Expense Tracker account is ready',
       html: `

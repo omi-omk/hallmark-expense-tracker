@@ -1,5 +1,5 @@
-import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/server'
+import { sendBrevoEmail } from '@/lib/email/brevo'
 import { isLowBalance } from './balance'
 
 export interface LowBalanceNotificationResult {
@@ -43,9 +43,7 @@ async function sendLowBalanceEmail(
 ): Promise<void> {
   if (!ownerAlertEmail) return
 
-  const resend = new Resend(process.env.RESEND_API_KEY)
-  await resend.emails.send({
-    from: 'onboarding@resend.dev',
+  await sendBrevoEmail({
     to: ownerAlertEmail,
     subject: `Low Balance Alert: ${employeeName}`,
     html: `

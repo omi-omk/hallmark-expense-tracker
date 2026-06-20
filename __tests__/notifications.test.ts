@@ -1,11 +1,8 @@
-jest.mock('resend', () => {
-  const mockSend = jest.fn().mockResolvedValue({ data: { id: 'test-id' }, error: null })
-  const MockResend = jest.fn().mockImplementation(() => ({
-    emails: { send: mockSend },
-  }))
-  ;(MockResend as unknown as { __mockSend: jest.Mock }).__mockSend = mockSend
-  return { Resend: MockResend }
-})
+const mockSendBrevoEmail = jest.fn().mockResolvedValue(undefined)
+
+jest.mock('@/lib/email/brevo', () => ({
+  sendBrevoEmail: (...args: unknown[]) => mockSendBrevoEmail(...args),
+}))
 
 const mockDeleteEq = jest.fn().mockResolvedValue({ error: null })
 const mockDelete = jest.fn(() => ({ eq: mockDeleteEq }))
@@ -43,13 +40,10 @@ jest.mock('web-push', () => ({
 }))
 
 import { checkAndNotifyLowBalance } from '@/lib/notifications'
-import { Resend } from 'resend'
-
-const getMockSend = (): jest.Mock => (Resend as unknown as { __mockSend: jest.Mock }).__mockSend
 
 describe('checkAndNotifyLowBalance', () => {
   beforeEach(() => {
-    getMockSend().mockClear()
+    mockSendBrevoEmail.mockClear()
     mockSendNotification.mockClear()
     mockSetVapidDetails.mockClear()
     mockFrom.mockClear()
@@ -63,7 +57,7 @@ describe('checkAndNotifyLowBalance', () => {
 
   it('sends email when balance is below threshold', async () => {
     const result = await checkAndNotifyLowBalance('Ravi Kumar', 300, 500, 'owner@example.com')
-    expect(getMockSend()).toHaveBeenCalledWith(
+    expect(mockSendBrevoEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         to: 'owner@example.com',
         subject: expect.stringContaining('Ravi Kumar'),
@@ -75,21 +69,21 @@ describe('checkAndNotifyLowBalance', () => {
 
   it('does not send email when balance equals threshold', async () => {
     const result = await checkAndNotifyLowBalance('Ravi Kumar', 500, 500, 'owner@example.com')
-    expect(getMockSend()).not.toHaveBeenCalled()
+    expect(mockSendBrevoEmail).not.toHaveBeenCalled()
     expect(mockSendNotification).not.toHaveBeenCalled()
     expect(result).toEqual({ emailAttempted: false, pushAttempted: false })
   })
 
   it('does not send email when balance is above threshold', async () => {
     const result = await checkAndNotifyLowBalance('Ravi Kumar', 800, 500, 'owner@example.com')
-    expect(getMockSend()).not.toHaveBeenCalled()
+    expect(mockSendBrevoEmail).not.toHaveBeenCalled()
     expect(mockSendNotification).not.toHaveBeenCalled()
     expect(result).toEqual({ emailAttempted: false, pushAttempted: false })
   })
 
   it('includes threshold amount in email', async () => {
     await checkAndNotifyLowBalance('Priya', 100, 1000, 'owner@example.com')
-    expect(getMockSend()).toHaveBeenCalledWith(
+    expect(mockSendBrevoEmail).toHaveBeenCalledWith(
       expect.objectContaining({
         html: expect.stringContaining('₹1000'),
       })
