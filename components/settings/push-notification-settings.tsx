@@ -15,23 +15,22 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 type PermissionState = NotificationPermission | 'unsupported' | 'loading'
 
 export function PushNotificationSettings() {
-  const [permission, setPermission] = useState<PermissionState>(() => {
-    if (typeof window === 'undefined') return 'loading'
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return 'unsupported'
-    return Notification.permission
-  })
+  const [permission, setPermission] = useState<PermissionState>('loading')
   const [subscribed, setSubscribed] = useState(false)
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-      return
-    }
+    void Promise.resolve().then(async () => {
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        setPermission('unsupported')
+        return
+      }
 
-    navigator.serviceWorker.ready
-      .then(registration => registration.pushManager.getSubscription())
-      .then(subscription => setSubscribed(!!subscription))
-      .catch(() => setSubscribed(false))
+      setPermission(Notification.permission)
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+      setSubscribed(!!subscription)
+    }).catch(() => setSubscribed(false))
   }, [])
 
   async function handleEnable() {
