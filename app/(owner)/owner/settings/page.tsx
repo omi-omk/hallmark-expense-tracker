@@ -8,13 +8,16 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { toast } from 'sonner'
 import { Trash2 } from 'lucide-react'
+import Link from 'next/link'
 import type { Category } from '@/types'
 import { PushNotificationSettings } from '@/components/settings/push-notification-settings'
 import { AdminManagement } from '@/components/settings/admin-management'
 import { ExpenseActivityLogCard } from '@/components/settings/expense-activity-log'
+import { ResetAppSettings } from '@/components/settings/reset-app-settings'
 import type { DashboardChartOrder } from '@/lib/dashboard/settings'
 import { chartOrderLabel } from '@/lib/dashboard/chart-order-label'
 import { createSubmitLock } from '@/lib/forms/submit-lock'
+import { startAppLoading } from '@/lib/loading/app-loading-events'
 
 export default function SettingsPage() {
   const [categories, setCategories] = useState<Category[]>([])
@@ -246,6 +249,8 @@ export default function SettingsPage() {
 
       <PushNotificationSettings />
 
+      <ResetAppSettings />
+
       <AdminManagement />
 
       <ExpenseActivityLogCard />
@@ -266,21 +271,29 @@ export default function SettingsPage() {
 
           <div className="divide-y">
             {categories.map(cat => (
-              <div key={cat.id} className="flex items-center justify-between py-2">
-                <span className="text-sm">{cat.name}</span>
-                {cat.is_system ? (
-                  <span className="text-xs text-muted-foreground px-2 py-0.5 bg-gray-100 rounded">Protected</span>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteCategory(cat.id)}
-                    disabled={deletingId === cat.id}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
+              <div key={cat.id} className="relative flex items-center justify-between py-2">
+                <Link
+                  href={`/owner/categories/${cat.id}`}
+                  onClick={startAppLoading}
+                  className="absolute inset-0 z-0"
+                  aria-label={`Open ${cat.name}`}
+                />
+                <span className="relative z-10 text-sm">{cat.name}</span>
+                <div className="relative z-10">
+                  {cat.is_system ? (
+                    <span className="text-xs text-muted-foreground px-2 py-0.5 bg-gray-100 rounded">Protected</span>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteCategory(cat.id)}
+                      disabled={deletingId === cat.id}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 h-7 w-7 p-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
             {categories.length === 0 && (
