@@ -11,6 +11,8 @@ const createWorkerSchema = z.object({
   low_balance_threshold: z.number().int().nonnegative().default(500),
 })
 
+const EXPENSE_APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'https://expense.hallmarkinteriorsolutions.in/'
+
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -72,6 +74,7 @@ export async function POST(request: Request) {
         <p>Your employee Expense Tracker account has been created. Here are your login details:</p>
         <p><strong>Email:</strong> ${email}<br/>
         <strong>Password:</strong> ${password}</p>
+        <p><strong>App link:</strong> <a href="${EXPENSE_APP_URL}">${EXPENSE_APP_URL}</a></p>
         <p>Please log in and change your password.</p>
       `,
     })
